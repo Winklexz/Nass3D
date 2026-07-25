@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from '@/context/AuthContext'
 import Login from '@/pages/Login'
 import Painel from '@/pages/Painel'
+import Materiais from '@/pages/Materiais'
 import AppLayout from '@/components/layout/AppLayout'
 
 function AppRoutes() {
@@ -16,6 +17,7 @@ function AppRoutes() {
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
       <Route path="/*" element={user ? <AppLayout /> : <Navigate to="/login" replace />}>
         <Route index element={<Painel />} />
+        <Route path="materiais" element={<Materiais />} />
       </Route>
     </Routes>
   )
