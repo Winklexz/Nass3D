@@ -277,7 +277,7 @@ body {
 }
 ```
 
-Note: `--card` above intentionally isn't used as a solid fill (`bg-card/[0.03]` in `.glass-panel` uses opacity instead) — shadcn components using `bg-card` will still render legibly since we pair it with `border` + `backdrop-blur` in the composite pages; components generated in Task 1 Step 11 are adjusted for this in their own tasks where needed (Card in Task 1 Step 11 already applies `glass-panel`).
+Note: `--card` above intentionally isn't used as a solid fill (`bg-card/[0.03]` in `.glass-panel` uses opacity instead). The shadcn `Card` component generated in Step 14 is left exactly as the CLI produces it — do not hand-edit `src/components/ui/card.jsx`. Every page that wants the glass look applies it by passing `className="glass-panel"` to `<Card>` at the call site (e.g. `<Card className="glass-panel p-5">`), which every later page task in this plan already does.
 
 - [ ] **Step 10: Write `src/main.jsx`**
 
