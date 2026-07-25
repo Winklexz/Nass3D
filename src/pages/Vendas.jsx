@@ -21,6 +21,7 @@ export default function Vendas() {
   const [comprador, setComprador] = useState('')
   const [contato, setContato] = useState('')
   const [valor, setValor] = useState('0')
+  const [submitting, setSubmitting] = useState(false)
 
   const pedidosAbertos = orders.filter(o => o.status !== 'Entregue')
 
@@ -35,13 +36,19 @@ export default function Vendas() {
   }
 
   async function handleAdd() {
+    if (submitting) return
     if (!produto.trim() && !comprador.trim()) return
-    await add({
-      data, produto: produto.trim(), comprador: comprador.trim(), contato: contato.trim(),
-      valor: parseFloat(valor) || 0, pedidoId: pedidoId || null,
-    })
-    if (pedidoId) await updateOrder(pedidoId, { status: 'Entregue' })
-    setPedidoId(''); setData(''); setProduto(''); setComprador(''); setContato(''); setValor('0')
+    setSubmitting(true)
+    try {
+      await add({
+        data, produto: produto.trim(), comprador: comprador.trim(), contato: contato.trim(),
+        valor: parseFloat(valor) || 0, pedidoId: pedidoId || null,
+      })
+      if (pedidoId) await updateOrder(pedidoId, { status: 'Entregue' })
+      setPedidoId(''); setData(''); setProduto(''); setComprador(''); setContato(''); setValor('0')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const total = sales.reduce((sum, v) => sum + (v.valor || 0), 0)
@@ -96,7 +103,7 @@ export default function Vendas() {
             <Label>Valor (R$)</Label>
             <Input type="number" step="0.5" min="0" value={valor} onChange={e => setValor(e.target.value)} />
           </div>
-          <Button onClick={handleAdd} className="lg:col-span-6">Registrar</Button>
+          <Button onClick={handleAdd} disabled={submitting} className="lg:col-span-6">Registrar</Button>
         </CardContent>
         <p className="mt-3 text-xs text-muted-foreground">
           Ligar a um pedido preenche produto, comprador e valor automaticamente, e marca o pedido como
