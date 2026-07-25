@@ -331,9 +331,9 @@ Expected: installs without error, creates `node_modules/` and `package-lock.json
 Run:
 ```bash
 cd "/c/Users/User/Downloads/Nass3D"
-npx shadcn@latest add button card input label table select sheet badge textarea --yes
+npx shadcn@latest add button card input label table select sheet textarea --yes
 ```
-Expected: creates `src/components/ui/{button,card,input,label,table,select,sheet,badge,textarea}.jsx` and adds any missing Radix/CVA dependencies to `package.json` automatically. If the CLI prompts interactively despite `--yes`, answer with the defaults already declared in `components.json` (New York style, no RSC, no TSX).
+Expected: creates `src/components/ui/{button,card,input,label,table,select,sheet,textarea}.jsx` and adds any missing Radix/CVA dependencies to `package.json` automatically. If the CLI prompts interactively despite `--yes`, answer with the defaults already declared in `components.json` (New York style, no RSC, no TSX).
 
 - [ ] **Step 15: Verify the toolchain boots**
 
@@ -1176,7 +1176,7 @@ git commit -m "Add Sidebar and AppLayout with mobile drawer navigation"
 - Create: `src/components/shared/AlertCard.jsx`
 
 **Interfaces:**
-- Produces: `useCountUp(target, formatFn, duration=650)` → `string`; `<StatCard label value format color linkTo linkLabel delay />`; `<AlertCard icon text level linkTo linkLabel delay />`. Consumed by `Painel.jsx` (Task 11) and `Relatorio.jsx` (Task 23).
+- Produces: `useCountUp(target, formatFn, duration=650)` → `string`; `<StatCard label value format color linkTo linkLabel delay />`; `<AlertCard icon text level linkTo linkLabel delay />`. Consumed by `Painel.jsx` (Task 11) and `Relatorio.jsx` (Task 21).
 
 - [ ] **Step 1: Write `src/hooks/useCountUp.js`** (ports the easing/duration from the original `animateNumber` in `script.js`)
 
@@ -2551,7 +2551,7 @@ git commit -m "Add calc.js pricing engine ported from script.js, with unit tests
 
 **Interfaces:**
 - Consumes: `jsPDF` (`jspdf` package), `fmtBRL` (Task 2).
-- Produces: `generateOrcamentoPdf(data)`, `generateRelatorioPdf(data)` — both call `.save(filename)` on a jsPDF document (same file-naming and layout as the original `orcExportBtn`/`relExportBtn` handlers). Consumed by `Calculadora.jsx` (Task 20) and `Relatorio.jsx` (Task 23).
+- Produces: `generateOrcamentoPdf(data)`, `generateRelatorioPdf(data)` — both call `.save(filename)` on a jsPDF document (same file-naming and layout as the original `orcExportBtn`/`relExportBtn` handlers). Consumed by `Calculadora.jsx` (Task 20) and `Relatorio.jsx` (Task 21).
 
 - [ ] **Step 1: Write `src/lib/pdf.js`**
 
@@ -3486,10 +3486,12 @@ git commit -m "Add page transition animation to route changes"
 
 ---
 
-### Task 23: Deploy migration — Vercel env vars, push, verify production
+### Task 23: Deploy migration — Vercel env vars, push, verify on a Preview deployment
+
+**Context:** this work happens on the `worktree-redesign-react-shadcn` branch (isolated worktree), not `main`. Pushing this branch to GitHub produces a Vercel **Preview** deployment with its own URL — production (`nass3-d.vercel.app`) only receives these changes later, when the branch is reviewed and merged to `main`. Do not push to `main` from this task.
 
 **Files:**
-- None created/modified (this task is operational: Vercel dashboard configuration + verification against the live URL).
+- None created/modified (this task is operational: Vercel dashboard configuration + verification against a preview URL).
 
 - [ ] **Step 1: Confirm the production build works locally**
 
@@ -3501,23 +3503,22 @@ Expected: serves `dist/` locally (default `http://localhost:4173`); spot-check t
 
 - [ ] **Step 2: Add environment variables in the Vercel dashboard**
 
-In the Vercel project (`nass3-d`) → Settings → Environment Variables, add for all environments (Production, Preview, Development):
+In the Vercel project (`nass3-d`) → Settings → Environment Variables, add for all environments (Production, Preview, Development) — Preview scope is what this task's verification depends on:
 - `VITE_SUPABASE_URL` = `https://zzngtfwongumucdtqwgk.supabase.co`
 - `VITE_SUPABASE_ANON_KEY` = (the same value already in `.env.local`)
 
 This is required because `.env.local` is gitignored — without these, the deployed build throws "Missing VITE_SUPABASE_URL" at load time.
 
-- [ ] **Step 3: Push to trigger deployment**
+- [ ] **Step 3: Push the worktree branch to trigger a Preview deployment**
 
 ```bash
-cd "/c/Users/User/Downloads/Nass3D"
-git push origin main
+git push origin worktree-redesign-react-shadcn
 ```
-Expected: Vercel detects the new `package.json`/Vite config on this push and switches the project's framework preset from "Other" (static) to "Vite" automatically; a new deployment starts.
+Expected: Vercel detects the push, detects the new `package.json`/Vite config, and starts a **Preview** deployment (not Production) on a generated URL (visible in the Vercel dashboard's Deployments list, or in the GitHub commit's status checks as a "Visit Preview" link).
 
-- [ ] **Step 4: Verify the live deployment**
+- [ ] **Step 4: Verify the Preview deployment**
 
-Navigate to `https://nass3-d.vercel.app` (a real `https://` URL — not `file://`, so the browser tool's network calls behave normally, unlike the static-snapshot issue hit earlier in this project's history):
+Open the Preview URL from Step 3 (a real `https://` URL — not `file://`, so the browser tool's network calls behave normally, unlike the static-snapshot issue hit earlier in this project's history):
 - Confirm the new black/red/glass UI loads, login screen shows the real logo.
 - Log in with the existing test account (`nass3d.teste.claude@gmail.com`).
 - Click through all 7 pages, confirm the sidebar highlights the active page and transitions animate.
@@ -3526,6 +3527,8 @@ Navigate to `https://nass3-d.vercel.app` (a real `https://` URL — not `file://
 - Confirm no errors in the browser console.
 
 - [ ] **Step 5: Commit** (only if Step 1–4 required code fixes; otherwise this task has no commit — it's a deployment/config task)
+
+Production verification against `nass3-d.vercel.app` itself happens after this branch is merged to `main` (outside this plan, via the project's normal branch-finishing process) — not as part of this task.
 
 ---
 
