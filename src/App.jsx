@@ -4,6 +4,7 @@ import Login from '@/pages/Login'
 import Painel from '@/pages/Painel'
 import Materiais from '@/pages/Materiais'
 import Produtos from '@/pages/Produtos'
+import Pedidos from '@/pages/Pedidos'
 import AppLayout from '@/components/layout/AppLayout'
 
 function AppRoutes() {
@@ -20,6 +21,7 @@ function AppRoutes() {
         <Route index element={<Painel />} />
         <Route path="materiais" element={<Materiais />} />
         <Route path="produtos" element={<Produtos />} />
+        <Route path="pedidos" element={<Pedidos />} />
       </Route>
     </Routes>
   )
