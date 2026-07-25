@@ -1,5 +1,5 @@
 export function fmtBRL(v) {
-  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }).replace(/ /g, ' ')
+  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 
 export function fmtNum(v, d = 1) {

@@ -6,7 +6,7 @@ import {
 
 describe('fmtBRL', () => {
   it('formats a number as BRL currency', () => {
-    expect(fmtBRL(1234.5)).toBe('R$ 1.234,50')
+    expect(fmtBRL(1234.5)).toBe('R$ 1.234,50')
   })
 })
 
