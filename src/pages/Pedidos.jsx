@@ -106,6 +106,10 @@ export default function Pedidos() {
             onUpdate={update}
             onRemove={remove}
             emptyMessage="Nenhum pedido em aberto."
+            rowClassName={(row) =>
+              row._flag === 'atrasado' ? 'border-l-2 border-l-destructive bg-destructive/5' :
+              row._flag === 'urgente' ? 'border-l-2 border-l-warning bg-warning/5' : ''
+            }
           />
         </CardContent>
       </Card>

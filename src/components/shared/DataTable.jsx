@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
+import { cn } from '@/lib/utils'
 
-export default function DataTable({ columns, rows, onUpdate, onRemove, emptyMessage }) {
+export default function DataTable({ columns, rows, onUpdate, onRemove, emptyMessage, rowClassName }) {
   if (rows.length === 0) {
     return <p className="py-8 text-center text-xs text-muted-foreground">{emptyMessage}</p>
   }
@@ -34,7 +35,7 @@ export default function DataTable({ columns, rows, onUpdate, onRemove, emptyMess
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="border-b border-border/60 last:border-0"
+                className={cn('border-b border-border/60 last:border-0', rowClassName?.(row))}
               >
                 {columns.map(col => (
                   <TableCell key={col.key} className="py-2">
