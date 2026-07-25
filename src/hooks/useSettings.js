@@ -28,7 +28,6 @@ export function useSettings() {
 
   async function save(patch) {
     const next = { ...settings, ...patch }
-    setSettings(next)
     const { error } = await supabase.from('settings').upsert({
       user_id: user.id,
       meta_mensal: next.metaMensal,
@@ -36,6 +35,7 @@ export function useSettings() {
       empresa_nome: next.empresaNome,
       logo_data_url: next.logoDataUrl,
     }, { onConflict: 'user_id' })
+    if (!error) setSettings(next)
     return { error }
   }
 
