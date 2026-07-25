@@ -3,75 +3,94 @@
 Site de gestão para empresa de impressão 3D: calculadora de precificação, controle de materiais,
 produtos, pedidos, vendas, relatório mensal e geração de orçamento em PDF.
 
-Arquivo estático, sem build step/bundler/dependências locais — abre direto no navegador
-(`index.html`).
+Sem build step/bundler — arquivos estáticos servidos como estão. Multiusuário com login: cada
+conta só vê os próprios dados (Supabase Auth + Postgres com Row Level Security).
 
 ## Estrutura de arquivos
 
-- [index.html](index.html) — markup (topbar, abas, as 7 seções) + `<link>`/`<script src>` para os
-  arquivos abaixo
-- [style.css](style.css) — todo o CSS (844 linhas), variáveis de tema em `:root` no topo (cores,
-  raio de borda)
-- [script.js](script.js) — toda a lógica (1306 linhas), dividida em blocos comentados
-  (`/* ===... === */`)
+- [index.html](index.html) — markup: tela de login (`#authScreen`) + app (`.wrap`, hidden até
+  logar) com topbar, abas e as 7 seções
+- [style.css](style.css) — todo o CSS, variáveis de tema em `:root` no topo (cores, raio de borda)
+- [config.js](config.js) — `SUPABASE_URL`/`SUPABASE_ANON_KEY` e criação do `supabaseClient`
+  (carregado antes de `script.js`)
+- [script.js](script.js) — lógica de negócio (calculadora, CRUDs, painel, relatório, PDF) +
+  `loadAll`/`saveAll`/`loadSettings`/`saveSettings`, que agora leem/gravam no Supabase
+- [auth.js](auth.js) — tela de login/cadastro, sessão, logout; chama `initCollections()`
+  (definida em `script.js`) só depois de confirmar que há um usuário logado
+- [supabase-schema.sql](supabase-schema.sql) — SQL das 5 tabelas + políticas de RLS, rodado uma
+  vez no SQL Editor do Supabase
 - [CLAUDE.md](CLAUDE.md) — este arquivo
 
-> Histórico: até 2026-07-24 o projeto era um único arquivo (`nass3d.html`, HTML+CSS+JS inline) e
-> usava `window.storage`, uma API que só existe dentro do ambiente Claude.ai. Foi separado nos três
-> arquivos acima e migrado para `localStorage` para funcionar como site local aberto direto no
-> navegador (ver seção "Persistência").
+Ordem de carregamento dos scripts em `index.html`: jsPDF → supabase-js (CDN) → `config.js` →
+`script.js` → `auth.js`. `script.js` só define funções (não roda `initCollections()` sozinho);
+quem dispara isso é `auth.js`, depois que confirma a sessão.
+
+> Histórico: até 2026-07-24 era um único arquivo (`nass3d.html`) com `window.storage` (API só do
+> Claude.ai). Foi separado em HTML/CSS/JS e migrado pra `localStorage` (dados presos ao navegador
+> local, sem login). Em seguida migrado pra Supabase (auth + banco na nuvem, acessível de qualquer
+> dispositivo) — ver seção "Persistência" abaixo.
 
 ### Dependências externas (via CDN, carregadas no `<head>` de `index.html`)
 - Google Fonts: Orbitron, Rajdhani, Inter, JetBrains Mono
-- [jsPDF](https://github.com/parallax/jsPDF) `2.5.1` (`cdnjs.cloudflare.com`) — geração de PDF de
-  orçamentos e relatórios
+- [jsPDF](https://github.com/parallax/jsPDF) `2.5.1` — geração de PDF de orçamentos/relatórios
+- [supabase-js](https://github.com/supabase/supabase-js) `2` (UMD, via jsDelivr) — cliente do
+  Supabase (auth + banco)
 
 ### Seções de `index.html`
-As 7 abas, cada uma um `<section class="tab-panel" id="tab-*">`:
-- **Painel** — dashboard inicial (alertas, saldo a receber, meta do mês)
-- **Calculadora** — formulário de precificação + painel de resultado + geração de orçamento em PDF
-  (inclui dropzone de `.gcode`)
-- **Materiais** — CRUD de filamentos (cor, preço/kg, estoque)
-- **Produtos** — CRUD de catálogo (nome, preço, custo)
-- **Pedidos** — CRUD de pedidos (cliente, telefone, item, prazo, status, valor)
-- **Vendas** — CRUD de vendas (associável a um pedido)
-- **Relatório** — resumo financeiro mensal + exportação PDF/impressão
+- **`#authScreen`** — tela de login/cadastro (e-mail + senha), única coisa visível até logar
+- **`.wrap`** (`display:none` até logar) — topbar (logo, abas, badge do usuário + botão Sair) e as
+  7 abas: Painel, Calculadora, Materiais, Produtos, Pedidos, Vendas, Relatório
 
-### Blocos de `script.js` (linhas aproximadas)
+## Autenticação (Supabase Auth)
 
-| Bloco | Linhas | Responsabilidade |
-|---|---|---|
-| TABS | 1–10 | troca de aba ativa |
-| HELPERS | 12–84 | formatação (BRL/número), animação de contador, cores nomeadas → hex, **`loadAll`/`saveAll`** (usam `localStorage`) |
-| CALCULADORA | 86–520 | estado de cores/pesos, cálculo de custo/margem, parsing de `.gcode` (Bambu/Orca/Prusa/Cura), dropzone, matching automático de cor→material salvo |
-| ORÇAMENTO EM PDF | 521–753 | upload de logo, preview de valores/descontos, geração do PDF via jsPDF, numeração sequencial de orçamento |
-| MATERIAIS | 754–833 | CRUD + preview de nome do filamento |
-| PRODUTOS | 834–893 | CRUD + datalist usado na aba Vendas |
-| PEDIDOS | 894–982 | CRUD + flag de atraso/urgência + link de WhatsApp |
-| VENDAS | 983–1077 | CRUD, vínculo opcional a um pedido (marca pedido como "Entregue") |
-| PAINEL (home dashboard) | 1078–1184 | saudação, alertas, saldo a receber, meta do mês — **`loadSettings`/`saveSettings`** (usam `localStorage`, chave `settings`) |
-| RELATÓRIO MENSAL | 1185–1288 | agregação por mês, exportação PDF, impressão |
-| INIT | 1289–1305 | `initCollections()` — carrega todas as coleções e renderiza todas as abas na inicialização |
+`auth.js` controla tudo:
+- `showAuthScreen()` / `showApp()` alternam entre a tela de login e `.wrap`
+- `handleLogin()` → `supabaseClient.auth.signInWithPassword`
+- `handleSignup()` → `supabaseClient.auth.signUp` (se o projeto exigir confirmação de e-mail, o
+  usuário só ganha sessão depois de clicar no link recebido)
+- `handleLogout()` → `supabaseClient.auth.signOut()`
+- Ao carregar a página, `initAuth()` chama `supabaseClient.auth.getSession()` — se já houver sessão
+  válida (cookie/token persistido pelo supabase-js), pula direto pro app sem pedir login de novo
+- `currentUser` (variável global em `auth.js`) guarda o usuário logado; `script.js` usa
+  `currentUser.id` em toda chamada ao banco
 
-## Persistência
+## Persistência (Supabase Postgres + RLS)
 
-Usa `localStorage` do navegador (síncrono), com chaves prefixadas por `nass3d_` para não colidir
-com outros sites abertos no mesmo perfil:
-- `nass3d_materials`: `[{ id, cor, nome, preco, estoque }]`
-- `nass3d_products`: `[{ id, nome, preco, custo }]`
-- `nass3d_orders`: `[{ id, cliente, telefone, item, prazo, status, valor, criadoEm }]`
-- `nass3d_sales`: `[{ id, data, produto, comprador, contato, valor, pedidoId? }]`
-- `nass3d_settings`: `{ metaMensal, orcamentoNumero, orcamentoEmpresa, orcamentoLogo, ... }` (config
-  de orçamento e meta mensal — inicializado em `initOrcamentoFromSettings()`)
+5 tabelas, todas com `user_id uuid references auth.users(id)` e RLS restringindo cada linha a
+`auth.uid() = user_id` (política `"own rows" ... for all using (...) with check (...)`, ver
+[supabase-schema.sql](supabase-schema.sql)):
 
-Todo acesso a dados passa por **`loadAll(key)`/`saveAll(key, arr)`** (coleções) e
-**`loadSettings()`/`saveSettings()`** (config) — únicos 4 pontos que tocam `localStorage`.
+- `materials(id, user_id, nome, cor, preco, estoque, created_at)`
+- `products(id, user_id, nome, preco, custo, created_at)`
+- `orders(id, user_id, cliente, telefone, item, prazo, status, valor, criado_em)`
+- `sales(id, user_id, data, produto, comprador, contato, valor, pedido_id, created_at)`
+- `settings(user_id [PK], meta_mensal, orcamento_numero, empresa_nome, logo_data_url, updated_at)`
 
-**Importante**: como é `localStorage` de arquivo local (`file://`), os dados ficam presos ao
-navegador/perfil usado para abrir `index.html`. Trocar de navegador ou limpar dados do site apaga
-o cadastro — não há backup automático. Se precisar migrar de máquina, exportar/reimportar os dados
-seria um próximo passo natural (hoje não existe essa função).
+`id` é gerado no cliente (`newId()`, alfanumérico) e usado como chave primária — não é serial do
+banco. `settings` tem uma linha por usuário (`user_id` é a própria PK), diferente das outras 4 que
+são listas.
+
+Todo acesso passa por **4 funções em `script.js`** (mesmos nomes de antes, agora batendo no
+Supabase em vez do `localStorage`):
+- `loadAll(key)` / `saveAll(key, arr)` — coleções (`materials`/`products`/`orders`/`sales`).
+  `saveAll` sempre recebe o array completo (é assim que o resto do código já funcionava antes da
+  migração) e faz o diff sozinho: busca os ids existentes no banco, deleta os que sumiram do
+  array, e faz `upsert` do resto.
+- `loadSettings()` / `saveSettings()` — linha única em `settings` (`upsert` com `onConflict:
+  'user_id'`)
+- `TABLES` (objeto em `script.js`) faz a conversão camelCase (app) ↔ snake_case (banco) por
+  coleção — é o único lugar que conhece o nome exato das colunas
+
+**Importante**: como é tudo client-side com a chave `anon public`, a segurança real vem das
+políticas de RLS, não do sigilo da chave — por isso `config.js` pode ser commitado normalmente. A
+chave `service_role` (essa sim secreta) nunca deve aparecer no código.
+
+## Deploy
+
+Publicado na Vercel a partir do repositório no GitHub — todo `git push` pra `master` republica o
+site automaticamente. Sem variáveis de ambiente de build (é tudo estático); `config.js` já contém
+a URL/chave do Supabase que vale tanto local quanto em produção.
 
 ## Git
 
-Repositório git local iniciado em 2026-07-24 para versionar o histórico do projeto.
+Repositório iniciado em 2026-07-24. Remoto no GitHub conectado à Vercel para deploy contínuo.
