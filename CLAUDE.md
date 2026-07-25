@@ -87,10 +87,26 @@ chave `service_role` (essa sim secreta) nunca deve aparecer no código.
 
 ## Deploy
 
-Publicado na Vercel a partir do repositório no GitHub — todo `git push` pra `master` republica o
-site automaticamente. Sem variáveis de ambiente de build (é tudo estático); `config.js` já contém
-a URL/chave do Supabase que vale tanto local quanto em produção.
+- **Site**: https://nass3-d.vercel.app
+- **Repositório**: https://github.com/Winklexz/Nass3D
+
+Publicado na Vercel a partir do repositório no GitHub — todo `git push` pra `main` republica o
+site automaticamente (~30s-1min). Sem variáveis de ambiente de build (é tudo estático); `config.js`
+já contém a URL/chave do Supabase que vale tanto local quanto em produção.
 
 ## Git
 
-Repositório iniciado em 2026-07-24. Remoto no GitHub conectado à Vercel para deploy contínuo.
+Repositório iniciado em 2026-07-24, branch `main`. Remoto no GitHub (`origin`) conectado à Vercel
+para deploy contínuo.
+
+## Notas de troubleshooting
+
+- **PostgREST "Could not find the table in the schema cache" (PGRST205)**: aconteceu com o
+  primeiro projeto Supabase criado (`pjsxudunqkqjeltiftpi`) mesmo com tabelas/grants/RLS/exposição
+  corretos, `NOTIFY pgrst, 'reload schema'`, restart do projeto e até uma alteração real de DDL —
+  nada resolveu. Um projeto novo (`zzngtfwongumucdtqwgk`, o que está em uso hoje) funcionou de
+  primeira com o mesmo SQL. Se isso se repetir, criar um projeto novo é mais rápido que depurar.
+- **Preview de arquivo `file://` fora da pasta do projeto**: o navegador de preview trata esses
+  arquivos como "snapshot estático" — chamadas de rede (`fetch`) para APIs externas não se
+  comportam como numa página real (retornam erros que não refletem o estado real do backend).
+  Para testar chamadas de rede de verdade, usar uma URL `http(s)://` real (ex: o deploy na Vercel).
