@@ -66,18 +66,66 @@ function buildFilamentName(corTexto, complemento){
   return nome;
 }
 
-const STORAGE_PREFIX = 'nass3d_';
+/* Mapeia cada coleção pra sua tabela no Supabase e converte entre o formato
+   usado no app (camelCase, plano) e as colunas do banco (snake_case). */
+const TABLES = {
+  materials: {
+    name: 'materials',
+    toObj: r => ({ id: r.id, nome: r.nome, cor: r.cor, preco: Number(r.preco), estoque: Number(r.estoque) }),
+    toRow: o => ({ id: o.id, nome: o.nome, cor: o.cor, preco: o.preco, estoque: o.estoque }),
+  },
+  products: {
+    name: 'products',
+    toObj: r => ({ id: r.id, nome: r.nome, preco: Number(r.preco), custo: Number(r.custo) }),
+    toRow: o => ({ id: o.id, nome: o.nome, preco: o.preco, custo: o.custo }),
+  },
+  orders: {
+    name: 'orders',
+    toObj: r => ({ id: r.id, cliente: r.cliente, telefone: r.telefone, item: r.item, prazo: r.prazo || '', status: r.status, valor: Number(r.valor), criadoEm: r.criado_em }),
+    toRow: o => ({ id: o.id, cliente: o.cliente || '', telefone: o.telefone || '', item: o.item || '', prazo: o.prazo || '', status: o.status || 'Pendente', valor: o.valor || 0, criado_em: o.criadoEm || new Date().toISOString() }),
+  },
+  sales: {
+    name: 'sales',
+    toObj: r => ({ id: r.id, data: r.data || '', produto: r.produto, comprador: r.comprador, contato: r.contato, valor: Number(r.valor), pedidoId: r.pedido_id || null }),
+    toRow: o => ({ id: o.id, data: o.data || '', produto: o.produto || '', comprador: o.comprador || '', contato: o.contato || '', valor: o.valor || 0, pedido_id: o.pedidoId || null }),
+  },
+};
+
+const ORDER_COL = { materials: 'created_at', products: 'created_at', orders: 'criado_em', sales: 'created_at' };
+
 async function loadAll(key){
   try{
-    const raw = localStorage.getItem(STORAGE_PREFIX + key);
-    return raw ? JSON.parse(raw) : [];
+    const table = TABLES[key];
+    const { data, error } = await supabaseClient
+      .from(table.name)
+      .select('*')
+      .eq('user_id', currentUser.id)
+      .order(ORDER_COL[key], { ascending: true });
+    if(error) throw error;
+    return (data || []).map(table.toObj);
   }catch(e){
+    console.error('Erro ao carregar', key, e);
     return [];
   }
 }
+
 async function saveAll(key, arr){
   try{
-    localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(arr));
+    const table = TABLES[key];
+    const { data: existing, error: selErr } = await supabaseClient
+      .from(table.name).select('id').eq('user_id', currentUser.id);
+    if(selErr) throw selErr;
+    const currentIds = new Set(arr.map(o => o.id));
+    const toDelete = (existing || []).map(r => r.id).filter(id => !currentIds.has(id));
+    if(toDelete.length){
+      const { error: delErr } = await supabaseClient.from(table.name).delete().in('id', toDelete);
+      if(delErr) throw delErr;
+    }
+    if(arr.length){
+      const rows = arr.map(o => ({ ...table.toRow(o), user_id: currentUser.id }));
+      const { error: upErr } = await supabaseClient.from(table.name).upsert(rows, { onConflict: 'id' });
+      if(upErr) throw upErr;
+    }
   }catch(e){
     console.error('Erro ao salvar', key, e);
   }
@@ -1082,12 +1130,32 @@ const WEEKDAYS_PT = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sá
 
 async function loadSettings(){
   try{
-    const raw = localStorage.getItem(STORAGE_PREFIX + 'settings');
-    if(raw) Object.assign(settings, JSON.parse(raw));
+    const { data, error } = await supabaseClient
+      .from('settings').select('*').eq('user_id', currentUser.id).maybeSingle();
+    if(error) throw error;
+    if(data){
+      Object.assign(settings, {
+        metaMensal: Number(data.meta_mensal),
+        orcamentoNumero: data.orcamento_numero || 0,
+        empresaNome: data.empresa_nome || '',
+        logoDataUrl: data.logo_data_url || '',
+      });
+    }
   }catch(e){ /* keep defaults */ }
 }
 async function saveSettings(){
-  try{ localStorage.setItem(STORAGE_PREFIX + 'settings', JSON.stringify(settings)); }catch(e){}
+  try{
+    const { error } = await supabaseClient.from('settings').upsert({
+      user_id: currentUser.id,
+      meta_mensal: settings.metaMensal,
+      orcamento_numero: settings.orcamentoNumero,
+      empresa_nome: settings.empresaNome || '',
+      logo_data_url: settings.logoDataUrl || '',
+    }, { onConflict: 'user_id' });
+    if(error) throw error;
+  }catch(e){
+    console.error('Erro ao salvar configurações', e);
+  }
 }
 
 function renderPainel(){
@@ -1303,4 +1371,3 @@ async function initCollections(){
   renderPainel();
   renderRelatorio();
 }
-initCollections();

@@ -7,10 +7,44 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800&family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div class="wrap">
+
+<div class="auth-screen" id="authScreen">
+  <div class="panel auth-card">
+    <div class="brand auth-brand">
+      <svg width="34" height="34" viewBox="0 0 34 34" xmlns="http://www.w3.org/2000/svg">
+        <rect x="1" y="1" width="32" height="32" rx="7" fill="#0a0a0c" stroke="#ff2438" stroke-width="1.4"/>
+        <path d="M17 8 L23 8 L17 19 L11 8 Z" fill="#ff2438"/>
+        <rect x="9" y="22" width="16" height="2" rx="1" fill="#ff2438"/>
+        <rect x="11.5" y="25.5" width="11" height="2" rx="1" fill="#ff2438" opacity="0.65"/>
+        <rect x="14" y="29" width="6" height="1.6" rx="0.8" fill="#ff2438" opacity="0.35"/>
+      </svg>
+      <div class="logotext">
+        <div class="wordmark"><span class="nass-text">Nass</span><span class="threeD-text">3D</span></div>
+        <div class="tagline">gestão de impressão 3d</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>E-mail</label>
+      <input type="email" id="authEmail" placeholder="voce@email.com" autocomplete="email">
+    </div>
+    <div class="field">
+      <label>Senha</label>
+      <input type="password" id="authPassword" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <div class="auth-msg" id="authMsg"></div>
+    <div class="auth-actions">
+      <button type="button" class="btn-orc" id="authLoginBtn">Entrar</button>
+      <button type="button" class="btn-print" id="authSignupBtn">Criar conta</button>
+    </div>
+    <div class="hint auth-hint">Seus dados ficam vinculados a este login e sincronizados entre dispositivos.</div>
+  </div>
+</div>
+
+<div class="wrap" style="display:none;">
 
   <div class="topbar">
     <div class="brand">
@@ -34,6 +68,10 @@
       <button class="tab" data-tab="pedidos">Pedidos</button>
       <button class="tab" data-tab="vendas">Vendas</button>
       <button class="tab" data-tab="relatorio">Relatório</button>
+    </div>
+    <div class="user-bar">
+      <span class="user-email" id="userBadge"></span>
+      <button type="button" class="logout-btn" id="logoutBtn" title="Sair">⏻ Sair</button>
     </div>
   </div>
 
@@ -485,6 +523,8 @@
 
 </div>
 
+<script src="config.js"></script>
 <script src="script.js"></script>
+<script src="auth.js"></script>
 </body>
 </html>

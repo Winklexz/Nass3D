@@ -315,7 +315,7 @@
   }
   .row2{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
-  input[type=number], input[type=text], input[type=date], input[type=month], select{
+  input[type=number], input[type=text], input[type=date], input[type=month], input[type=email], input[type=password], select{
     width: 100%;
     background: var(--panel-alt);
     border: 1px solid var(--border);
@@ -328,7 +328,7 @@
     transition: border-color .15s;
   }
   select{ cursor: pointer; }
-  input[type=number]:focus, input[type=text]:focus, input[type=date]:focus, input[type=month]:focus, select:focus{
+  input[type=number]:focus, input[type=text]:focus, input[type=date]:focus, input[type=month]:focus, input[type=email]:focus, input[type=password]:focus, select:focus{
     border-color: var(--accent);
     box-shadow: 0 0 0 3px var(--accent-dim);
   }
@@ -842,3 +842,50 @@
     margin-bottom: 14px; padding: 10px 12px;
     background: var(--panel-alt); border-radius: 8px; border: 1px solid var(--border);
   }
+
+  /* ---------- Auth (login/cadastro) ---------- */
+  .auth-screen{
+    min-height: 100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding: 20px;
+    background:
+      radial-gradient(ellipse 900px 380px at 20% -10%, #ff243817, transparent 60%),
+      var(--bg);
+  }
+  .auth-card{ width: 100%; max-width: 360px; }
+  .auth-brand{ display:flex; align-items:center; gap:12px; justify-content:center; margin-bottom: 22px; }
+  .auth-msg{ font-size: 12.5px; min-height: 18px; margin: 2px 0 12px; line-height: 1.4; }
+  .auth-msg.err{ color: var(--red); }
+  .auth-msg.ok{ color: var(--green); }
+  .auth-actions{ display:flex; gap: 10px; }
+  .auth-actions button{ flex:1; }
+  .auth-hint{ margin-top: 16px; text-align:center; }
+
+  .user-bar{
+    display:flex; align-items:center; gap: 10px;
+  }
+  .user-email{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    color: var(--text-faint);
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .logout-btn{
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    font-size: 12.5px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all .15s;
+    white-space: nowrap;
+  }
+  .logout-btn:hover{ border-color: var(--red); color: var(--red); }
