@@ -216,7 +216,10 @@ do jsPDF, por exemplo) se a performance de carregamento num dia vier a importar.
 
 Repositório no GitHub (`origin`) conectado à Vercel para deploy contínuo, branch principal `main`.
 O redesign React (2026-07-25) foi desenvolvido numa branch separada
-(`worktree-redesign-react-shadcn`, worktree local) e depois integrado a `main`.
+(`worktree-redesign-react-shadcn`), num git worktree local, isolada da `main`. Neste momento
+(redação deste documento) ela ainda **não** foi mesclada em `main` — ver seção "Deploy" acima para
+o estado do deploy de Preview. Confira `git log`/o estado atual do repositório antes de assumir
+que o merge já aconteceu.
 
 ## Notas de troubleshooting
 
