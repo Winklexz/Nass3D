@@ -1,11 +1,13 @@
 import { useState } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
+import { AnimatePresence, motion } from 'framer-motion'
 import { Menu } from 'lucide-react'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import Sidebar from './Sidebar'
 
 export default function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const location = useLocation()
 
   return (
     <div className="min-h-screen md:flex">
@@ -29,7 +31,17 @@ export default function AppLayout() {
 
       <main className="flex-1 px-5 py-7 md:px-8 md:py-8">
         <div className="mx-auto max-w-5xl">
-          <Outlet />
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
         </div>
       </main>
     </div>
