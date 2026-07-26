@@ -17,6 +17,7 @@ export function useCollection(key) {
     const { data: rows, error } = await supabase
       .from(table.name).select('*').eq('user_id', user.id).order(orderCol, { ascending: true })
     if (!error) setData((rows || []).map(r => rowToObj(r, table.fields)))
+    else console.error('Erro ao carregar', key, error)
     setLoading(false)
   }, [user, table, orderCol])
 

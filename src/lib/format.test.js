@@ -56,11 +56,13 @@ describe('waLink', () => {
 
 describe('pedidoRowFlag', () => {
   it('flags an overdue order', () => {
-    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
+    const d = new Date(); d.setDate(d.getDate() - 1)
+    const yesterday = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
     expect(pedidoRowFlag({ prazo: yesterday, status: 'Pendente' })).toBe('atrasado')
   })
   it('does not flag a delivered order', () => {
-    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
+    const d = new Date(); d.setDate(d.getDate() - 1)
+    const yesterday = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
     expect(pedidoRowFlag({ prazo: yesterday, status: 'Entregue' })).toBe('')
   })
 })

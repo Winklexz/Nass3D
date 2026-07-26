@@ -57,24 +57,40 @@ export default function Calculadora() {
   const [stockMsg, setStockMsg] = useState('')
   const fileInputRef = useRef(null)
 
+  const [priceIsManual, setPriceIsManual] = useState(false)
+  const isFirstRender = useRef(true)
+
+  const [sellPriceText, setSellPriceText] = useState(() => calculatePricing({
+    colorWeights: rows.map(r => r.weight),
+    colorPrices: rows.map(r => r.price),
+    purgeGramsPerSwap: purgeGrams,
+    printHours, energyRate, printerCost, printerLife, nozzleCost, nozzleLife,
+    laborRate, laborHours, insumos, frete, riscoPct: risco, margin,
+  }).price.toFixed(2))
+  const sellPriceFocused = useRef(false)
+
   const result = useMemo(() => calculatePricing({
     colorWeights: rows.map(r => r.weight),
     colorPrices: rows.map(r => r.price),
     purgeGramsPerSwap: purgeGrams,
     printHours, energyRate, printerCost, printerLife, nozzleCost, nozzleLife,
     laborRate, laborHours, insumos, frete, riscoPct: risco, margin,
-  }), [rows, purgeGrams, printHours, energyRate, printerCost, printerLife, nozzleCost, nozzleLife, laborRate, laborHours, insumos, frete, risco, margin])
+    sellPrice: priceIsManual ? (parseFloat(sellPriceText) || 0) : undefined,
+    priceIsManual,
+  }), [rows, purgeGrams, printHours, energyRate, printerCost, printerLife, nozzleCost, nozzleLife, laborRate, laborHours, insumos, frete, risco, margin, priceIsManual, sellPriceText])
 
-  const [sellPriceText, setSellPriceText] = useState(result.price.toFixed(2))
-  const sellPriceFocused = useRef(false)
   useEffect(() => {
     if (!sellPriceFocused.current) setSellPriceText(result.price.toFixed(2))
   }, [result.price])
 
+  useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return }
+    setPriceIsManual(false)
+  }, [rows, purgeGrams, printHours, energyRate, printerCost, printerLife, nozzleCost, nozzleLife, laborRate, laborHours, insumos, frete, risco, margin])
+
   function handleSellPriceInput(raw) {
+    setPriceIsManual(true)
     setSellPriceText(raw)
-    const price = parseFloat(raw) || 0
-    setMargin(result.totalCost > 0 ? Math.round(((price / result.totalCost) - 1) * 100) : 0)
   }
 
   function setColorCount(n) {
@@ -138,18 +154,24 @@ export default function Calculadora() {
 
   async function handleDeductStock() {
     const updates = []
+    const failures = []
     for (const row of rows) {
       if (row.materialId) {
         const m = materials.find(x => x.id === row.materialId)
         if (m) {
-          await updateMaterial(m.id, { estoque: Math.max(0, (m.estoque || 0) - row.weight) })
-          updates.push(`${m.nome}: -${fmtNum(row.weight, 1)}g`)
+          const { error } = await updateMaterial(m.id, { estoque: Math.max(0, (m.estoque || 0) - row.weight) })
+          if (error) failures.push(m.nome)
+          else updates.push(`${m.nome}: -${fmtNum(row.weight, 1)}g`)
         }
       }
     }
-    setStockMsg(updates.length
-      ? `Estoque atualizado — ${updates.join(' · ')}`
-      : 'Nenhum material vinculado nas cores desta peça — selecione um material no seletor de cada cor pra descontar do estoque.')
+    setStockMsg(
+      failures.length
+        ? `Erro ao atualizar estoque de: ${failures.join(', ')}. Tente de novo.${updates.length ? ` (${updates.join(' · ')} atualizado com sucesso)` : ''}`
+        : updates.length
+          ? `Estoque atualizado — ${updates.join(' · ')}`
+          : 'Nenhum material vinculado nas cores desta peça — selecione um material no seletor de cada cor pra descontar do estoque.'
+    )
   }
 
   const currentMult = 1 + margin / 100
@@ -179,6 +201,8 @@ export default function Calculadora() {
   const [orcDesconto2, setOrcDesconto2] = useState('')
   const [orcObs, setOrcObs] = useState('')
   const [orcStatus, setOrcStatus] = useState(null)
+  const [orcSubmitting, setOrcSubmitting] = useState(false)
+  const orcSubmittingRef = useRef(false)
   const logoInputRef = useRef(null)
   const [empresaNomeDraft, setEmpresaNomeDraft] = useState(settings.empresaNome)
 
@@ -200,32 +224,44 @@ export default function Calculadora() {
   }
 
   async function handleExportOrcamento() {
+    // orcSubmittingRef is checked/set synchronously (unlike the orcSubmitting state, which only
+    // takes effect once React re-renders) so a second click that lands before the PDF's synchronous
+    // generation work yields back to the event loop is still blocked. orcSubmitting state stays in
+    // sync with it purely to drive the button's disabled prop.
+    if (orcSubmittingRef.current) return
     if (!orcCliente.trim() || !orcDescricao.trim()) {
       setOrcStatus({ type: 'err', text: 'Preencha ao menos o nome do cliente e a descrição do serviço.' })
       return
     }
-    const numero = String((settings.orcamentoNumero || 0) + 1).padStart(3, '0')
+    orcSubmittingRef.current = true
+    setOrcSubmitting(true)
     try {
-      generateOrcamentoPdf({
-        numero, empresa: settings.empresaNome || 'Minha Empresa', logoDataUrl: settings.logoDataUrl,
-        cliente: orcCliente.trim(), descricao: orcDescricao.trim(), material: orcMaterial.trim(),
-        quantidade: orcQuantidade, prazo: orcPrazo.trim(), validade: orcValidade.trim(),
-        forma1: orcForma1.trim(), desc1: parseFloat(orcDesconto1) || 0,
-        forma2: orcForma2.trim(), desc2: parseFloat(orcDesconto2) || 0,
-        obs: orcObs.trim(), base: result.price,
-      })
-      const { error: settingsError } = await saveSettings({ orcamentoNumero: (settings.orcamentoNumero || 0) + 1 })
-      const { error: orderError } = await addOrder({
-        cliente: orcCliente.trim(), telefone: '', item: `#${numero} ${orcDescricao.trim()}${orcQuantidade > 1 ? ` (${orcQuantidade}x)` : ''}`,
-        prazo: '', status: 'Orçamento', valor: result.price, criadoEm: new Date().toISOString(),
-      })
-      if (settingsError || orderError) {
-        setOrcStatus({ type: 'err', text: 'PDF exportado, mas não consegui salvar o orçamento na aba Pedidos — tente de novo.' })
-      } else {
-        setOrcStatus({ type: 'ok', text: 'PDF exportado e orçamento salvo na aba Pedidos.' })
+      const numero = String((settings.orcamentoNumero || 0) + 1).padStart(3, '0')
+      try {
+        generateOrcamentoPdf({
+          numero, empresa: settings.empresaNome || 'Minha Empresa', logoDataUrl: settings.logoDataUrl,
+          cliente: orcCliente.trim(), descricao: orcDescricao.trim(), material: orcMaterial.trim(),
+          quantidade: orcQuantidade, prazo: orcPrazo.trim(), validade: orcValidade.trim(),
+          forma1: orcForma1.trim(), desc1: parseFloat(orcDesconto1) || 0,
+          forma2: orcForma2.trim(), desc2: parseFloat(orcDesconto2) || 0,
+          obs: orcObs.trim(), base: result.price,
+        })
+        const { error: settingsError } = await saveSettings({ orcamentoNumero: (settings.orcamentoNumero || 0) + 1 })
+        const { error: orderError } = await addOrder({
+          cliente: orcCliente.trim(), telefone: '', item: `#${numero} ${orcDescricao.trim()}${orcQuantidade > 1 ? ` (${orcQuantidade}x)` : ''}`,
+          prazo: '', status: 'Orçamento', valor: result.price, criadoEm: new Date().toISOString(),
+        })
+        if (settingsError || orderError) {
+          setOrcStatus({ type: 'err', text: 'PDF exportado, mas não consegui salvar o orçamento na aba Pedidos — tente de novo.' })
+        } else {
+          setOrcStatus({ type: 'ok', text: 'PDF exportado e orçamento salvo na aba Pedidos.' })
+        }
+      } catch {
+        setOrcStatus({ type: 'err', text: 'Não consegui gerar o PDF agora — tente de novo.' })
       }
-    } catch {
-      setOrcStatus({ type: 'err', text: 'Não consegui gerar o PDF agora — tente de novo.' })
+    } finally {
+      orcSubmittingRef.current = false
+      setOrcSubmitting(false)
     }
   }
 
@@ -388,7 +424,7 @@ export default function Calculadora() {
                 })}
               </div>
               <Field label="Markup sobre o custo (%)">
-                <Input type="number" step="1" min="0" value={margin} onChange={e => setMargin(parseFloat(e.target.value) || 0)} />
+                <Input type="number" step="1" min="0" value={Math.round(priceIsManual ? result.margin : margin)} onChange={e => setMargin(parseFloat(e.target.value) || 0)} />
               </Field>
               <p className="mt-2 text-xs text-muted-foreground">
                 {margin}% de markup = multiplicador de <b className="text-foreground">{fmtNum(currentMult, 2).replace(/,00$/, '')}x</b> sobre o custo total.
@@ -543,7 +579,7 @@ export default function Calculadora() {
             {orcForma2 && <><br />{orcForma2}{parseFloat(orcDesconto2) > 0 ? ` (${orcDesconto2}% off)` : ''}: <b className="text-foreground">{fmtBRL(val2)}</b></>}
           </div>
 
-          <Button className="w-full" onClick={handleExportOrcamento}>📄 Exportar Orçamento em PDF</Button>
+          <Button className="w-full" onClick={handleExportOrcamento} disabled={orcSubmitting}>📄 Exportar Orçamento em PDF</Button>
           {orcStatus && (
             <div className={`mt-2.5 rounded-lg px-3 py-2.5 text-xs leading-relaxed ${orcStatus.type === 'ok' ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
               {orcStatus.text}

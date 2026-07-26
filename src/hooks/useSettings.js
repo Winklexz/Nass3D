@@ -20,6 +20,8 @@ export function useSettings() {
         empresaNome: data.empresa_nome || '',
         logoDataUrl: data.logo_data_url || '',
       })
+    } else if (error) {
+      console.error('Erro ao carregar settings', error)
     }
     setLoading(false)
   }, [user])
