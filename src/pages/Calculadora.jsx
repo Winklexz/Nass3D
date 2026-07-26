@@ -180,6 +180,7 @@ export default function Calculadora() {
   const [orcObs, setOrcObs] = useState('')
   const [orcStatus, setOrcStatus] = useState(null)
   const logoInputRef = useRef(null)
+  const [empresaNomeDraft, setEmpresaNomeDraft] = useState(settings.empresaNome)
 
   useEffect(() => {
     if (orcMaterial.trim()) return
@@ -187,6 +188,8 @@ export default function Calculadora() {
     if (names.length) setOrcMaterial(names.join(' + '))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows, materials])
+
+  useEffect(() => { setEmpresaNomeDraft(settings.empresaNome) }, [settings.empresaNome])
 
   function handleLogoFile(e) {
     const f = e.target.files[0]; if (!f) return
@@ -211,12 +214,16 @@ export default function Calculadora() {
         forma2: orcForma2.trim(), desc2: parseFloat(orcDesconto2) || 0,
         obs: orcObs.trim(), base: result.price,
       })
-      await saveSettings({ orcamentoNumero: (settings.orcamentoNumero || 0) + 1 })
-      await addOrder({
+      const { error: settingsError } = await saveSettings({ orcamentoNumero: (settings.orcamentoNumero || 0) + 1 })
+      const { error: orderError } = await addOrder({
         cliente: orcCliente.trim(), telefone: '', item: `#${numero} ${orcDescricao.trim()}${orcQuantidade > 1 ? ` (${orcQuantidade}x)` : ''}`,
         prazo: '', status: 'Orçamento', valor: result.price, criadoEm: new Date().toISOString(),
       })
-      setOrcStatus({ type: 'ok', text: 'PDF exportado e orçamento salvo na aba Pedidos.' })
+      if (settingsError || orderError) {
+        setOrcStatus({ type: 'err', text: 'PDF exportado, mas não consegui salvar o orçamento na aba Pedidos — tente de novo.' })
+      } else {
+        setOrcStatus({ type: 'ok', text: 'PDF exportado e orçamento salvo na aba Pedidos.' })
+      }
     } catch {
       setOrcStatus({ type: 'err', text: 'Não consegui gerar o PDF agora — tente de novo.' })
     }
@@ -496,7 +503,12 @@ export default function Calculadora() {
               )}
             </Field>
             <Field label="Sua empresa / seu nome">
-              <Input value={settings.empresaNome} onChange={e => saveSettings({ empresaNome: e.target.value })} placeholder="Ex: João 3D Prints" />
+              <Input
+                value={empresaNomeDraft}
+                onChange={e => setEmpresaNomeDraft(e.target.value)}
+                onBlur={() => { if (empresaNomeDraft !== settings.empresaNome) saveSettings({ empresaNome: empresaNomeDraft }) }}
+                placeholder="Ex: João 3D Prints"
+              />
             </Field>
           </div>
 
