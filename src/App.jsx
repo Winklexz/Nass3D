@@ -7,6 +7,7 @@ import Materiais from '@/pages/Materiais'
 import Produtos from '@/pages/Produtos'
 import Pedidos from '@/pages/Pedidos'
 import Vendas from '@/pages/Vendas'
+import Relatorio from '@/pages/Relatorio'
 import AppLayout from '@/components/layout/AppLayout'
 
 function AppRoutes() {
@@ -26,6 +27,7 @@ function AppRoutes() {
         <Route path="produtos" element={<Produtos />} />
         <Route path="pedidos" element={<Pedidos />} />
         <Route path="vendas" element={<Vendas />} />
+        <Route path="relatorio" element={<Relatorio />} />
       </Route>
     </Routes>
   )
