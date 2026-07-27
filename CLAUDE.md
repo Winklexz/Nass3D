@@ -37,9 +37,13 @@ Security).
   `StatCard.jsx` (card de estatística com contador animado), `AlertCard.jsx` (alerta com nível
   atrasado/urgente/ok), `DataTable.jsx` (tabela genérica com edição inline — exporta também
   `textCell`/`numberCell`/`dateCell`/`selectCell`, helpers que viram células editáveis, usados
-  pelas páginas de CRUD)
+  pelas páginas de CRUD; abaixo de 768px renderiza como uma lista de cartões empilhados em vez de
+  `<table>`, pra manter os botões de ação sempre alcançáveis no celular sem scroll horizontal —
+  adicionado em 2026-07-26 depois de um bug relatado onde o botão de excluir ficava fora da área
+  visível/tocável em telas pequenas; também ganhou uma prop opcional `onEdit(row)` que adiciona um
+  ícone de editar além do de excluir, usado hoje só por Materiais)
 - [src/components/ui/](src/components/ui) — primitivos gerados pelo CLI do shadcn/ui (`button`,
-  `card`, `input`, `label`, `select`, `sheet`, `table`, `textarea`). Não têm lógica de negócio —
+  `card`, `input`, `label`, `select`, `sheet`, `table`, `textarea`, `dialog`). Não têm lógica de negócio —
   regenerar/adicionar via `npx shadcn add <componente>` em vez de escrever à mão
 - [src/hooks/](src/hooks) — camada de acesso a dados (Supabase):
   - `useCollection.js` — hook genérico por coleção (`materials`/`products`/`orders`/`sales`):
@@ -63,8 +67,9 @@ Security).
   - `utils.js` — `cn()` (merge de classes Tailwind, padrão gerado pelo shadcn/ui)
   - Cada módulo de lógica tem um `*.test.js` ao lado (`format.test.js`, `tables.test.js`,
     `calc.test.js`, `gcode.test.js`), rodados com `npm test` (Vitest)
-- [supabase-schema.sql](supabase-schema.sql) — SQL das 5 tabelas + políticas de RLS, inalterado
-  desde a versão estática (roda uma vez no SQL Editor do Supabase)
+- [supabase-schema.sql](supabase-schema.sql) — SQL das 5 tabelas + políticas de RLS, mesma base da
+  versão estática, mais os `alter table` de `materials.tipo` e das 7 colunas novas de `settings`
+  adicionados em 2026-07-26 (roda uma vez no SQL Editor do Supabase)
 - [tailwind.config.js](tailwind.config.js) + [src/index.css](src/index.css) — tokens de tema
   (cores, fontes, raio de borda) — ver seção "Design" abaixo
 - [components.json](components.json) — config do CLI do shadcn/ui (estilo `new-york`, aliases de
@@ -102,17 +107,29 @@ autocomplete de path alias, não faz checagem de tipos).
 
 ## Persistência (Supabase Postgres + RLS)
 
-Mesmas 5 tabelas de antes, **schema e políticas de RLS inalterados** (`supabase-schema.sql` é
-idêntico ao da versão estática) — cada linha tem `user_id uuid references auth.users(id)` e uma
-política `auth.uid() = user_id`:
+Mesmas 5 tabelas de antes, **políticas de RLS inalteradas** (o schema em si ganhou as colunas
+descritas abaixo em 2026-07-26, via `alter table` em `supabase-schema.sql`) — cada linha tem
+`user_id uuid references auth.users(id)` e uma política `auth.uid() = user_id`:
 
-- `materials(id, user_id, nome, cor, preco, estoque, created_at)`
+- `materials(id, user_id, nome, cor, tipo, preco, estoque, created_at)` — `tipo` (PLA/PETG/ABS/TPU/ASA/Nylon/texto livre) adicionado em 2026-07-26
 - `products(id, user_id, nome, preco, custo, created_at)`
 - `orders(id, user_id, cliente, telefone, item, prazo, status, valor, criado_em)`
 - `sales(id, user_id, data, produto, comprador, contato, valor, pedido_id, created_at)`
-- `settings(user_id [PK], meta_mensal, orcamento_numero, empresa_nome, logo_data_url, updated_at)`
+- `settings(user_id [PK], meta_mensal, orcamento_numero, empresa_nome, logo_data_url, printer_cost,
+  printer_life, nozzle_cost, nozzle_life, energy_rate, labor_rate, labor_hours, updated_at)` — os 7
+  campos de equipamento/mão de obra da Calculadora foram adicionados em 2026-07-26 (antes eram
+  `useState` locais com valor de exemplo fixo, resetando a cada visita; agora persistem por conta,
+  mesmo padrão de commit-on-blur que `empresa_nome` já usava)
 
 `id` continua gerado no cliente (`newId()` em `src/lib/format.js`) e usado como chave primária.
+
+**Estado inicial da Calculadora**: peso/preço/cor por cor e horas de impressão nascem
+zerados/vazios a cada carregamento (não há mais um exemplo pré-preenchido gerando um preço
+"fantasma") — ver `src/pages/Calculadora.jsx`. Os campos de equipamento (impressora, bico, energia,
+mão de obra) vêm de `settings` e persistem entre sessões; a primeira vez que uma conta usa a
+Calculadora eles mostram os mesmos valores de exemplo de antes só como sugestão inicial, editável e
+salva a partir daí. O valor sugerido de venda mostra o preço exato e uma versão arredondada pra
+cima em múltiplos de R$5 (`roundUpTo` em `src/lib/format.js`) lado a lado.
 
 **O que mudou nesta reescrita é só a estratégia de mutação no cliente.** Antes, `saveAll(key, arr)`
 recebia o array inteiro e fazia o diff sozinho (buscava ids existentes, deletava os que sumiram,
@@ -191,8 +208,12 @@ redesign; resumo do que foi decidido e por quê, pra quem for mexer na UI depois
 
 Publicado na Vercel a partir do repositório no GitHub. A Vercel agora **auto-detecta o projeto
 como Vite** (por causa do `package.json`/`vite.config.js`) em vez de servir estático puro: build
-command `npm run build` (= `vite build`), saída em `dist/`, sem config extra necessária no
-`vercel.json` (não existe um).
+command `npm run build` (= `vite build`), saída em `dist/`.
+
+Um `vercel.json` na raiz faz rewrite de qualquer rota pra `index.html` (`{"rewrites": [{"source":
+"/(.*)", "destination": "/index.html"}]}`), necessário porque `react-router-dom` faz roteamento no
+cliente — sem isso, recarregar a página numa sub-rota (ex: `/materiais`) retornava 404 (bug
+encontrado e corrigido em 2026-07-26).
 
 Credenciais do Supabase **não são mais commitadas**: não existe mais `config.js` no repo. Em vez
 disso, `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` são configuradas como variáveis de ambiente
