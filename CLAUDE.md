@@ -227,9 +227,10 @@ mudança de tela/funcionalidade existente.
   formatos variados), `apple-touch-icon-180x180.png` e `favicon.ico`, todos commitados em
   `public/`. Se a logo mudar, rodar o comando de novo regenera todos.
 - **iOS**: Safari não expõe banner automático de instalação nem lê o manifest — por isso
-  `index.html` também tem `<link rel="apple-touch-icon">` e as meta tags
-  `apple-mobile-web-app-*` manuais, além do que o plugin já injeta (`<link rel="manifest">` e
-  `<meta name="theme-color">`).
+  `index.html` também tem, escritos à mão, o `<link rel="apple-touch-icon">`, as meta tags
+  `apple-mobile-web-app-*` e `<meta name="theme-color">` (o plugin só injeta automaticamente o
+  `<link rel="manifest">` e o script de registro do service worker — não o `theme-color`, então
+  não remova essa tag manual achando que é redundante).
 - **Testar localmente**: `npm run dev` **não** ativa o service worker (só roda em build de
   produção). Use `npm run build && npm run preview` pra testar o comportamento real de PWA.
 
