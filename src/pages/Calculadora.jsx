@@ -36,6 +36,7 @@ const COST_PARTS_META = [
 export default function Calculadora() {
   const { data: materials, update: updateMaterial } = useCollection('materials')
   const { data: orders, add: addOrder } = useCollection('orders')
+  const { add: addProduct } = useCollection('products')
   const { settings, save: saveSettings } = useSettings()
 
   const [rows, setRows] = useState([{ weight: 0, price: 0, colorHex: COLOR_DEFAULTS[0], materialId: '' }])
@@ -55,6 +56,25 @@ export default function Calculadora() {
   const [gcodeStatus, setGcodeStatus] = useState(null)
   const [dragOver, setDragOver] = useState(false)
   const [stockMsg, setStockMsg] = useState('')
+  const [produtoNome, setProdutoNome] = useState('')
+  const [produtoStatus, setProdutoStatus] = useState(null)
+  const [produtoSalvando, setProdutoSalvando] = useState(false)
+
+  async function handleSalvarProduto() {
+    if (!produtoNome.trim()) {
+      setProdutoStatus({ type: 'err', text: 'Digite um nome pro produto antes de salvar.' })
+      return
+    }
+    setProdutoSalvando(true)
+    const { error } = await addProduct({ nome: produtoNome.trim(), preco: roundedPrice, custo: result.totalCost })
+    setProdutoSalvando(false)
+    if (error) {
+      setProdutoStatus({ type: 'err', text: 'Não consegui salvar o produto agora — tente de novo.' })
+    } else {
+      setProdutoStatus({ type: 'ok', text: `"${produtoNome.trim()}" salvo em Produtos.` })
+      setProdutoNome('')
+    }
+  }
   const fileInputRef = useRef(null)
 
   const [priceIsManual, setPriceIsManual] = useState(false)
@@ -529,6 +549,27 @@ export default function Calculadora() {
                 Registrar impressão (descontar do estoque)
               </Button>
               {stockMsg && <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{stockMsg}</p>}
+
+              <div className="mt-4 border-t border-border pt-4">
+                <Label className="mb-1.5 block text-[11px] uppercase tracking-wider">Salvar como produto</Label>
+                <div className="flex gap-2">
+                  <Input value={produtoNome} onChange={e => setProdutoNome(e.target.value)} placeholder="Nome do produto" />
+                  <Button
+                    variant="outline" onClick={handleSalvarProduto} disabled={produtoSalvando}
+                    className="shrink-0 border-primary text-primary hover:bg-primary hover:text-white"
+                  >
+                    Salvar
+                  </Button>
+                </div>
+                {produtoStatus && (
+                  <p className={`mt-2 text-xs leading-relaxed ${produtoStatus.type === 'ok' ? 'text-success' : 'text-destructive'}`}>
+                    {produtoStatus.text}
+                  </p>
+                )}
+                <p className="mt-1.5 text-[11px] text-muted-foreground">
+                  Cria em Produtos com preço {fmtBRL(roundedPrice)} (arredondado) e custo {fmtBRL(result.totalCost)}.
+                </p>
+              </div>
 
               <p className="mt-4 text-[11px] leading-relaxed text-muted-foreground">
                 Cálculo simples de referência — impostos sobre a venda não estão incluídos. O desconto de estoque considera só o peso por cor vinculado a um material.
