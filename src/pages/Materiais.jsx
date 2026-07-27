@@ -171,6 +171,11 @@ function EditMaterialDialog({ material, onClose, onSave }) {
     setEstoque(String(material.estoque ?? 0))
     setAddEstoque('')
     setSaveStatus(null)
+  } else if (!material && openedFor !== null) {
+    // Reset the sentinel when the dialog closes so the next open — even for the same
+    // material — re-triggers the pre-fill block above instead of showing stale state
+    // (e.g. an estoque value from before the previous save).
+    setOpenedFor(null)
   }
 
   async function handleSave() {

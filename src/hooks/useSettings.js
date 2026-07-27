@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { useAuth } from '@/context/AuthContext'
 
@@ -12,13 +12,19 @@ export function useSettings() {
   const { user } = useAuth()
   const [settings, setSettings] = useState(DEFAULTS)
   const [loading, setLoading] = useState(true)
+  // Mirrors `settings` synchronously so `save()` always merges against the latest known
+  // value instead of the `settings` snapshot closed over when this `save` reference was
+  // created. Without this, two saves fired close together (e.g. tabbing between two
+  // fields that both blur-save) can race: the second save builds its payload from a
+  // snapshot that doesn't yet include the first save's change, silently clobbering it.
+  const settingsRef = useRef(settings)
 
   const reload = useCallback(async () => {
     if (!user) return
     setLoading(true)
     const { data, error } = await supabase.from('settings').select('*').eq('user_id', user.id).maybeSingle()
     if (!error && data) {
-      setSettings({
+      const loaded = {
         metaMensal: Number(data.meta_mensal),
         orcamentoNumero: data.orcamento_numero || 0,
         empresaNome: data.empresa_nome || '',
@@ -30,7 +36,9 @@ export function useSettings() {
         energyRate: Number(data.energy_rate ?? DEFAULTS.energyRate),
         laborRate: Number(data.labor_rate ?? DEFAULTS.laborRate),
         laborHours: Number(data.labor_hours ?? DEFAULTS.laborHours),
-      })
+      }
+      settingsRef.current = loaded
+      setSettings(loaded)
     } else if (error) {
       console.error('Erro ao carregar settings', error)
     }
@@ -40,7 +48,13 @@ export function useSettings() {
   useEffect(() => { reload() }, [reload])
 
   async function save(patch) {
-    const next = { ...settings, ...patch }
+    // Merge against settingsRef.current (updated synchronously, not on the next render)
+    // rather than the `settings` state directly, and update it immediately — before the
+    // network round trip — so a save started right after this one sees this patch already
+    // applied instead of racing it.
+    const next = { ...settingsRef.current, ...patch }
+    settingsRef.current = next
+    setSettings(next)
     const { error } = await supabase.from('settings').upsert({
       user_id: user.id,
       meta_mensal: next.metaMensal,
@@ -55,7 +69,6 @@ export function useSettings() {
       labor_rate: next.laborRate,
       labor_hours: next.laborHours,
     }, { onConflict: 'user_id' })
-    if (!error) setSettings(next)
     return { error }
   }
 

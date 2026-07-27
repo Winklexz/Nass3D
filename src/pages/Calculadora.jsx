@@ -56,6 +56,7 @@ export default function Calculadora() {
   const [gcodeStatus, setGcodeStatus] = useState(null)
   const [dragOver, setDragOver] = useState(false)
   const [stockMsg, setStockMsg] = useState('')
+  const [equipStatus, setEquipStatus] = useState(null)
   const [produtoNome, setProdutoNome] = useState('')
   const [produtoStatus, setProdutoStatus] = useState(null)
   const [produtoSalvando, setProdutoSalvando] = useState(false)
@@ -101,6 +102,15 @@ export default function Calculadora() {
 
   const roundedPrice = roundUpTo(result.price, 5)
 
+  // Per the design spec's "critério de pronto": until there's real piece data (weight or
+  // print time), the calculator shouldn't show a price built purely from the labor/energy
+  // floor seeded from settings. This is a display-only guard — calculatePricing's math is
+  // untouched, and normal pricing resumes the instant any weight or hours are entered.
+  const totalPieceWeight = rows.reduce((sum, r) => sum + (r.weight || 0), 0)
+  const hasPieceData = totalPieceWeight > 0 || printHours > 0
+  const displaySellPriceText = hasPieceData ? sellPriceText : '0.00'
+  const displayRoundedPrice = hasPieceData ? roundedPrice : 0
+
   useEffect(() => {
     if (!sellPriceFocused.current) setSellPriceText(result.price.toFixed(2))
   }, [result.price])
@@ -115,8 +125,14 @@ export default function Calculadora() {
     setLaborHours(settings.laborHours)
   }, [settings.printerCost, settings.printerLife, settings.nozzleCost, settings.nozzleLife, settings.energyRate, settings.laborRate, settings.laborHours])
 
-  function commitEquipmentField(key, value) {
-    if (value !== settings[key]) saveSettings({ [key]: value })
+  async function commitEquipmentField(key, value) {
+    if (value === settings[key]) return
+    const { error } = await saveSettings({ [key]: value })
+    if (error) {
+      setEquipStatus({ type: 'err', text: 'Não consegui salvar essa alteração — tente de novo.' })
+    } else {
+      setEquipStatus(null)
+    }
   }
 
   useEffect(() => {
@@ -133,7 +149,7 @@ export default function Calculadora() {
     n = Math.max(1, Math.min(4, n))
     setRows(prev => {
       const next = [...prev]
-      while (next.length < n) next.push({ weight: 0, price: 140, colorHex: COLOR_DEFAULTS[next.length], materialId: '' })
+      while (next.length < n) next.push({ weight: 0, price: 0, colorHex: COLOR_DEFAULTS[next.length], materialId: '' })
       return next.slice(0, n)
     })
   }
@@ -430,6 +446,10 @@ export default function Calculadora() {
             </CardContent>
           </Card>
 
+          {equipStatus && (
+            <p className="text-xs leading-relaxed text-destructive">{equipStatus.text}</p>
+          )}
+
           <Card className="glass-panel p-5">
             <CardContent className="p-0">
               <SectionTitle>Custos extras</SectionTitle>
@@ -476,7 +496,7 @@ export default function Calculadora() {
               <div className="mb-1.5 flex items-center gap-2.5 rounded-lg border border-border bg-white/[0.03] px-3.5 py-2.5">
                 <span className="rounded-md border border-primary/40 bg-primary/15 px-1.5 py-0.5 font-mono text-[10px] text-primary">BRL</span>
                 <input
-                  type="number" step="0.5" min="0" value={sellPriceText}
+                  type="number" step="0.5" min="0" value={displaySellPriceText}
                   onFocus={() => { sellPriceFocused.current = true }}
                   onBlur={() => { sellPriceFocused.current = false; setSellPriceText(result.price.toFixed(2)) }}
                   onChange={e => handleSellPriceInput(e.target.value)}
@@ -485,7 +505,7 @@ export default function Calculadora() {
               </div>
               <div className="mb-4 flex items-center justify-between px-0.5 text-xs text-muted-foreground">
                 <span>Arredondado pra cobrar</span>
-                <span className="font-mono font-semibold text-foreground">{fmtBRL(roundedPrice)}</span>
+                <span className="font-mono font-semibold text-foreground">{fmtBRL(displayRoundedPrice)}</span>
               </div>
 
               <div className="mb-3.5 flex items-center gap-4 rounded-lg border p-4" style={{ borderColor: `${ringColor}40`, background: `linear-gradient(135deg, ${ringColor}18, transparent)` }}>
