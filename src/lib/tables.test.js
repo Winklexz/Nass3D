@@ -27,4 +27,11 @@ describe('rowToObj / objToRow', () => {
     const row = objToRow({ pedidoId: 'ord1' }, TABLES.sales.fields)
     expect(row).toEqual({ pedido_id: 'ord1' })
   })
+
+  it('maps materials tipo field', () => {
+    const row = { id: 'm1', nome: 'Filamento Azul', cor: '#1d63d1', preco: 140, estoque: 500, tipo: 'PETG' }
+    const obj = rowToObj(row, TABLES.materials.fields)
+    expect(obj.tipo).toBe('PETG')
+    expect(objToRow({ tipo: 'ABS' }, TABLES.materials.fields)).toEqual({ tipo: 'ABS' })
+  })
 })

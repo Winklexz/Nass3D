@@ -65,3 +65,15 @@ create policy "own rows" on public.products  for all using (auth.uid() = user_id
 create policy "own rows" on public.orders    for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "own rows" on public.sales     for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "own rows" on public.settings  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- Migração 2026-07-26: tipo de filamento em materials + campos de equipamento em settings.
+-- Rode este bloco uma vez no SQL Editor do Supabase (idempotente — pode rodar de novo sem erro).
+alter table public.materials add column if not exists tipo text not null default 'PLA';
+
+alter table public.settings add column if not exists printer_cost numeric not null default 4800;
+alter table public.settings add column if not exists printer_life numeric not null default 8000;
+alter table public.settings add column if not exists nozzle_cost numeric not null default 200;
+alter table public.settings add column if not exists nozzle_life numeric not null default 1500;
+alter table public.settings add column if not exists energy_rate numeric not null default 1;
+alter table public.settings add column if not exists labor_rate numeric not null default 1;
+alter table public.settings add column if not exists labor_hours numeric not null default 1.5;

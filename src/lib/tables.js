@@ -1,7 +1,7 @@
 export const TABLES = {
   materials: {
     name: 'materials',
-    fields: { id: 'id', nome: 'nome', cor: 'cor', preco: 'preco', estoque: 'estoque' },
+    fields: { id: 'id', nome: 'nome', cor: 'cor', preco: 'preco', estoque: 'estoque', tipo: 'tipo' },
   },
   products: {
     name: 'products',
