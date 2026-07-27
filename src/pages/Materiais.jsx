@@ -26,6 +26,7 @@ export default function Materiais() {
   const [estoque, setEstoque] = useState('1000')
 
   const [editing, setEditing] = useState(null)
+  const [addStatus, setAddStatus] = useState(null)
 
   function handleCorTextoChange(v) {
     setCorTexto(v)
@@ -35,13 +36,18 @@ export default function Materiais() {
 
   async function handleAdd() {
     if (!corTexto.trim()) return
-    await add({
+    const { error } = await add({
       nome: buildFilamentName(corTexto, complemento),
       cor: corPicker,
       tipo: tipo === 'Outro' ? (tipoOutro.trim() || 'Outro') : tipo,
       preco: parseFloat(preco) || 0,
       estoque: parseFloat(estoque) || 0,
     })
+    if (error) {
+      setAddStatus({ type: 'err', text: 'Não consegui salvar o material — tente de novo.' })
+      return
+    }
+    setAddStatus(null)
     setCorTexto(''); setComplemento(''); setEstoque('1000'); setTipo('PLA'); setTipoOutro('')
   }
 
@@ -110,6 +116,11 @@ export default function Materiais() {
         <p className="mt-3 text-xs text-muted-foreground">
           Nome: <span className="font-mono font-semibold text-primary">{buildFilamentName(corTexto, complemento)}</span>
         </p>
+        {addStatus && (
+          <div className={`mt-2.5 rounded-lg px-3 py-2.5 text-xs leading-relaxed ${addStatus.type === 'ok' ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
+            {addStatus.text}
+          </div>
+        )}
       </Card>
 
       <Card className="glass-panel p-5">
@@ -147,6 +158,7 @@ function EditMaterialDialog({ material, onClose, onSave }) {
   const [estoque, setEstoque] = useState('0')
   const [addEstoque, setAddEstoque] = useState('')
   const [openedFor, setOpenedFor] = useState(null)
+  const [saveStatus, setSaveStatus] = useState(null)
 
   if (material && openedFor !== material.id) {
     setOpenedFor(material.id)
@@ -158,18 +170,23 @@ function EditMaterialDialog({ material, onClose, onSave }) {
     setPreco(String(material.preco ?? 0))
     setEstoque(String(material.estoque ?? 0))
     setAddEstoque('')
+    setSaveStatus(null)
   }
 
   async function handleSave() {
     const estoqueBase = parseFloat(estoque) || 0
     const soma = parseFloat(addEstoque) || 0
-    await onSave(material.id, {
+    const { error } = await onSave(material.id, {
       nome: nome.trim() || material.nome,
       cor,
       tipo: tipo === 'Outro' ? (tipoOutro.trim() || 'Outro') : tipo,
       preco: parseFloat(preco) || 0,
       estoque: estoqueBase + soma,
     })
+    if (error) {
+      setSaveStatus({ type: 'err', text: 'Não consegui salvar — tente de novo.' })
+      return
+    }
     onClose()
   }
 
@@ -220,6 +237,9 @@ function EditMaterialDialog({ material, onClose, onSave }) {
             <p className="text-[11px] text-muted-foreground">Soma ao estoque atual em vez de substituir — use isso quando comprar mais do mesmo filamento.</p>
           </div>
         </div>
+        {saveStatus?.type === 'err' && (
+          <p className="text-xs text-destructive">{saveStatus.text}</p>
+        )}
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
           <Button onClick={handleSave}>Salvar</Button>
