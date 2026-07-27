@@ -6,6 +6,11 @@ export function fmtNum(v, d = 1) {
   return v.toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d })
 }
 
+export function roundUpTo(value, step) {
+  if (step <= 0) return value
+  return Math.ceil(value / step) * step
+}
+
 export function newId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7)
 }

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   fmtBRL, fmtNum, resolveColorInput, capitalizeWords, buildFilamentName,
-  waLink, pedidoRowFlag, hexToRgb, colorDistance, findClosestMaterial,
+  waLink, pedidoRowFlag, hexToRgb, colorDistance, findClosestMaterial, roundUpTo,
 } from './format.js'
 
 describe('fmtBRL', () => {
@@ -86,5 +86,23 @@ describe('findClosestMaterial', () => {
   })
   it('returns null when nothing is close enough', () => {
     expect(findClosestMaterial('#00ff00', materials, 10)).toBeNull()
+  })
+})
+
+describe('roundUpTo', () => {
+  it('rounds up to the next multiple of step', () => {
+    expect(roundUpTo(68.27, 5)).toBe(70)
+  })
+
+  it('leaves an exact multiple unchanged', () => {
+    expect(roundUpTo(70, 5)).toBe(70)
+  })
+
+  it('rounds up small values above zero', () => {
+    expect(roundUpTo(0.5, 5)).toBe(5)
+  })
+
+  it('returns 0 for a value of 0', () => {
+    expect(roundUpTo(0, 5)).toBe(0)
   })
 })
