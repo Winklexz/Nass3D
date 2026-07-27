@@ -12,7 +12,7 @@ import { useCollection } from '@/hooks/useCollection'
 import { useSettings } from '@/hooks/useSettings'
 import { calculatePricing } from '@/lib/calc'
 import { parseGcode } from '@/lib/gcode'
-import { fmtBRL, fmtNum, findClosestMaterial } from '@/lib/format'
+import { fmtBRL, fmtNum, findClosestMaterial, roundUpTo } from '@/lib/format'
 import { generateOrcamentoPdf } from '@/lib/pdf'
 
 const COLOR_DEFAULTS = ['#ff2438', '#35c4d4', '#b06bff', '#35d488']
@@ -38,16 +38,16 @@ export default function Calculadora() {
   const { data: orders, add: addOrder } = useCollection('orders')
   const { settings, save: saveSettings } = useSettings()
 
-  const [rows, setRows] = useState([{ weight: 130, price: 140, colorHex: COLOR_DEFAULTS[0], materialId: '' }])
+  const [rows, setRows] = useState([{ weight: 0, price: 0, colorHex: COLOR_DEFAULTS[0], materialId: '' }])
   const [purgeGrams, setPurgeGrams] = useState(8)
-  const [printHours, setPrintHours] = useState(9)
-  const [energyRate, setEnergyRate] = useState(1)
-  const [printerCost, setPrinterCost] = useState(4800)
-  const [printerLife, setPrinterLife] = useState(8000)
-  const [nozzleCost, setNozzleCost] = useState(200)
-  const [nozzleLife, setNozzleLife] = useState(1500)
-  const [laborRate, setLaborRate] = useState(1)
-  const [laborHours, setLaborHours] = useState(1.5)
+  const [printHours, setPrintHours] = useState(0)
+  const [energyRate, setEnergyRate] = useState(settings.energyRate)
+  const [printerCost, setPrinterCost] = useState(settings.printerCost)
+  const [printerLife, setPrinterLife] = useState(settings.printerLife)
+  const [nozzleCost, setNozzleCost] = useState(settings.nozzleCost)
+  const [nozzleLife, setNozzleLife] = useState(settings.nozzleLife)
+  const [laborRate, setLaborRate] = useState(settings.laborRate)
+  const [laborHours, setLaborHours] = useState(settings.laborHours)
   const [insumos, setInsumos] = useState(0)
   const [frete, setFrete] = useState(0)
   const [risco, setRisco] = useState(7)
@@ -79,9 +79,25 @@ export default function Calculadora() {
     priceIsManual,
   }), [rows, purgeGrams, printHours, energyRate, printerCost, printerLife, nozzleCost, nozzleLife, laborRate, laborHours, insumos, frete, risco, margin, priceIsManual, sellPriceText])
 
+  const roundedPrice = roundUpTo(result.price, 5)
+
   useEffect(() => {
     if (!sellPriceFocused.current) setSellPriceText(result.price.toFixed(2))
   }, [result.price])
+
+  useEffect(() => {
+    setPrinterCost(settings.printerCost)
+    setPrinterLife(settings.printerLife)
+    setNozzleCost(settings.nozzleCost)
+    setNozzleLife(settings.nozzleLife)
+    setEnergyRate(settings.energyRate)
+    setLaborRate(settings.laborRate)
+    setLaborHours(settings.laborHours)
+  }, [settings.printerCost, settings.printerLife, settings.nozzleCost, settings.nozzleLife, settings.energyRate, settings.laborRate, settings.laborHours])
+
+  function commitEquipmentField(key, value) {
+    if (value !== settings[key]) saveSettings({ [key]: value })
+  }
 
   useEffect(() => {
     if (isFirstRender.current) { isFirstRender.current = false; return }
@@ -366,7 +382,7 @@ export default function Calculadora() {
               <SectionTitle>Impressão</SectionTitle>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Tempo de impressão (horas)"><Input type="number" step="0.1" min="0" value={printHours} onChange={e => setPrintHours(parseFloat(e.target.value) || 0)} /></Field>
-                <Field label="Energia por hora (R$)"><Input type="number" step="0.1" min="0" value={energyRate} onChange={e => setEnergyRate(parseFloat(e.target.value) || 0)} /></Field>
+                <Field label="Energia por hora (R$)"><Input type="number" step="0.1" min="0" value={energyRate} onChange={e => setEnergyRate(parseFloat(e.target.value) || 0)} onBlur={() => commitEquipmentField('energyRate', energyRate)} /></Field>
               </div>
               <p className="mt-2.5 text-xs text-muted-foreground">O cálculo soma automaticamente +5 min ao tempo pra cobrir o nivelamento automático da mesa.</p>
             </CardContent>
@@ -376,10 +392,10 @@ export default function Calculadora() {
             <CardContent className="p-0">
               <SectionTitle>Depreciação de equipamento</SectionTitle>
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Valor da impressora (R$)"><Input type="number" step="1" min="0" value={printerCost} onChange={e => setPrinterCost(parseFloat(e.target.value) || 0)} /></Field>
-                <Field label="Vida útil (horas)"><Input type="number" step="1" min="1" value={printerLife} onChange={e => setPrinterLife(parseFloat(e.target.value) || 1)} /></Field>
-                <Field label="Valor do bico (R$)"><Input type="number" step="1" min="0" value={nozzleCost} onChange={e => setNozzleCost(parseFloat(e.target.value) || 0)} /></Field>
-                <Field label="Vida útil do bico (horas)"><Input type="number" step="1" min="1" value={nozzleLife} onChange={e => setNozzleLife(parseFloat(e.target.value) || 1)} /></Field>
+                <Field label="Valor da impressora (R$)"><Input type="number" step="1" min="0" value={printerCost} onChange={e => setPrinterCost(parseFloat(e.target.value) || 0)} onBlur={() => commitEquipmentField('printerCost', printerCost)} /></Field>
+                <Field label="Vida útil (horas)"><Input type="number" step="1" min="1" value={printerLife} onChange={e => setPrinterLife(parseFloat(e.target.value) || 1)} onBlur={() => commitEquipmentField('printerLife', printerLife)} /></Field>
+                <Field label="Valor do bico (R$)"><Input type="number" step="1" min="0" value={nozzleCost} onChange={e => setNozzleCost(parseFloat(e.target.value) || 0)} onBlur={() => commitEquipmentField('nozzleCost', nozzleCost)} /></Field>
+                <Field label="Vida útil do bico (horas)"><Input type="number" step="1" min="1" value={nozzleLife} onChange={e => setNozzleLife(parseFloat(e.target.value) || 1)} onBlur={() => commitEquipmentField('nozzleLife', nozzleLife)} /></Field>
               </div>
             </CardContent>
           </Card>
@@ -388,8 +404,8 @@ export default function Calculadora() {
             <CardContent className="p-0">
               <SectionTitle>Mão de obra</SectionTitle>
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Valor da sua hora (R$)"><Input type="number" step="0.5" min="0" value={laborRate} onChange={e => setLaborRate(parseFloat(e.target.value) || 0)} /></Field>
-                <Field label="Acabamento + montagem (horas)"><Input type="number" step="0.1" min="0" value={laborHours} onChange={e => setLaborHours(parseFloat(e.target.value) || 0)} /></Field>
+                <Field label="Valor da sua hora (R$)"><Input type="number" step="0.5" min="0" value={laborRate} onChange={e => setLaborRate(parseFloat(e.target.value) || 0)} onBlur={() => commitEquipmentField('laborRate', laborRate)} /></Field>
+                <Field label="Acabamento + montagem (horas)"><Input type="number" step="0.1" min="0" value={laborHours} onChange={e => setLaborHours(parseFloat(e.target.value) || 0)} onBlur={() => commitEquipmentField('laborHours', laborHours)} /></Field>
               </div>
             </CardContent>
           </Card>
@@ -437,7 +453,7 @@ export default function Calculadora() {
           <Card className="glass-panel p-5">
             <CardContent className="p-0">
               <Label className="mb-2.5 block text-[11px] uppercase tracking-wider">Quanto vou cobrar</Label>
-              <div className="mb-4 flex items-center gap-2.5 rounded-lg border border-border bg-white/[0.03] px-3.5 py-2.5">
+              <div className="mb-1.5 flex items-center gap-2.5 rounded-lg border border-border bg-white/[0.03] px-3.5 py-2.5">
                 <span className="rounded-md border border-primary/40 bg-primary/15 px-1.5 py-0.5 font-mono text-[10px] text-primary">BRL</span>
                 <input
                   type="number" step="0.5" min="0" value={sellPriceText}
@@ -446,6 +462,10 @@ export default function Calculadora() {
                   onChange={e => handleSellPriceInput(e.target.value)}
                   className="w-full bg-transparent font-ui text-3xl font-bold outline-none"
                 />
+              </div>
+              <div className="mb-4 flex items-center justify-between px-0.5 text-xs text-muted-foreground">
+                <span>Arredondado pra cobrar</span>
+                <span className="font-mono font-semibold text-foreground">{fmtBRL(roundedPrice)}</span>
               </div>
 
               <div className="mb-3.5 flex items-center gap-4 rounded-lg border p-4" style={{ borderColor: `${ringColor}40`, background: `linear-gradient(135deg, ${ringColor}18, transparent)` }}>
