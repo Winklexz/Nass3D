@@ -74,7 +74,11 @@ Security).
   (cores, fontes, raio de borda) — ver seção "Design" abaixo
 - [components.json](components.json) — config do CLI do shadcn/ui (estilo `new-york`, aliases de
   import `@/components`, `@/lib`, `@/hooks`, etc.)
-- [vite.config.js](vite.config.js) — plugin do React + alias `@` → `src/`
+- [vite.config.js](vite.config.js) — plugin do React + alias `@` → `src/` + `VitePWA` (manifest e
+  service worker, ver seção "PWA" abaixo)
+- [pwa-assets.config.js](pwa-assets.config.js) — config do `@vite-pwa/assets-generator`, usado uma
+  vez (`npx pwa-assets-generator`) pra gerar os ícones do PWA a partir de `public/logo-nass3d.png`
+  — só roda de novo se a logo mudar, não faz parte do build normal
 - `.env.local` (gitignored) / [.env.example](.env.example) — `VITE_SUPABASE_URL` /
   `VITE_SUPABASE_ANON_KEY` pro ambiente local (ver seção Deploy pra produção)
 - [CLAUDE.md](CLAUDE.md) — este arquivo
@@ -88,6 +92,7 @@ Security).
 - **Animação**: `framer-motion`
 - **Backend/dados**: `@supabase/supabase-js`
 - **PDF**: `jspdf`
+- **PWA**: `vite-plugin-pwa` (dev), `@vite-pwa/assets-generator` (dev, só pra gerar ícones)
 
 Sem JavaScript puro/TypeScript misto — é tudo `.jsx`/`.js` puro (`jsconfig.json` só dá
 autocomplete de path alias, não faz checagem de tipos).
@@ -200,6 +205,33 @@ redesign; resumo do que foi decidido e por quê, pra quem for mexer na UI depois
   `tailwind.config.js` (que também define as famílias de fonte, o raio de borda e a sombra
   `shadow-glow`). Componentes `src/components/ui/*` não devem ser editados à mão além de ajustes
   de estilo pontuais — prefira regenerar via CLI do shadcn/ui se precisar de outro primitivo.
+
+## PWA (instalável)
+
+Adicionado em 2026-07-27. O Nass3D é instalável como PWA (ícone na tela inicial, abre em tela
+cheia sem barra de navegador) via `vite-plugin-pwa` (configurado em `vite.config.js`), sem nenhuma
+mudança de tela/funcionalidade existente.
+
+- **Manifest**: gerado automaticamente pelo plugin a partir do bloco `manifest` em
+  `vite.config.js` (nome, cores da marca `#08080a`, ícones). Não existe um `manifest.json` escrito
+  à mão — `dist/manifest.webmanifest` é gerado no build.
+- **Service worker**: estratégia `generateSW` (Workbox por baixo), `registerType: 'autoUpdate'` —
+  o app atualiza sozinho na próxima abertura depois de um novo deploy, sem exigir reinstalar.
+  `workbox.globPatterns` cobre só os arquivos estáticos da interface (`js`/`css`/`html`/ícones/
+  fontes) — **nunca** chamadas ao Supabase, que sempre vêm da rede. Não há suporte offline pros
+  dados (materiais, pedidos, vendas continuam exigindo internet); o que fica em cache é só o
+  "esqueleto" visual, pra abrir mais rápido / não ficar em branco com sinal ruim.
+- **Ícones**: gerados uma vez a partir de `public/logo-nass3d.png` via `npx pwa-assets-generator`
+  (usa o `pwa-assets.config.js` na raiz) — produz `pwa-64x64.png`, `pwa-192x192.png`,
+  `pwa-512x512.png`, `maskable-icon-512x512.png` (com margem de segurança pro Android recortar em
+  formatos variados), `apple-touch-icon-180x180.png` e `favicon.ico`, todos commitados em
+  `public/`. Se a logo mudar, rodar o comando de novo regenera todos.
+- **iOS**: Safari não expõe banner automático de instalação nem lê o manifest — por isso
+  `index.html` também tem `<link rel="apple-touch-icon">` e as meta tags
+  `apple-mobile-web-app-*` manuais, além do que o plugin já injeta (`<link rel="manifest">` e
+  `<meta name="theme-color">`).
+- **Testar localmente**: `npm run dev` **não** ativa o service worker (só roda em build de
+  produção). Use `npm run build && npm run preview` pra testar o comportamento real de PWA.
 
 ## Deploy
 
