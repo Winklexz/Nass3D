@@ -21,7 +21,12 @@ const PEDIDOS_CSV_COLUMNS = [
   { key: 'prazo', label: 'Prazo' },
   { key: 'status', label: 'Status' },
   { key: 'valor', label: 'Valor (R$)', format: (row) => fmtCsvNumber(row.valor) },
-  { key: 'criadoEm', label: 'Criado em' },
+  {
+    key: 'criadoEm', label: 'Criado em',
+    // criadoEm is stored as a UTC ISO timestamp — convert to local pt-BR date+time so the
+    // exported column doesn't show the wrong calendar day for orders created late at night.
+    format: (row) => row.criadoEm ? new Date(row.criadoEm).toLocaleString('pt-BR') : '',
+  },
 ]
 
 export default function Pedidos() {

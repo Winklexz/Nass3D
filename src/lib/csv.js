@@ -5,10 +5,9 @@ function escapeCsvField(value) {
 }
 
 export function fmtCsvNumber(v) {
-  // Round to 2 decimals to strip floating-point noise (e.g. 3.1672000000000002) before
-  // handing the value to a spreadsheet/accountant.
-  const rounded = Math.round((v ?? 0) * 100) / 100
-  return String(rounded).replace('.', ',')
+  // toFixed(2) both strips floating-point noise (e.g. 3.1672000000000002) and keeps every
+  // value at a uniform 2 decimals (140 -> "140,00"), consistent for a spreadsheet/accountant.
+  return (v ?? 0).toFixed(2).replace('.', ',')
 }
 
 export function toCsv(rows, columns) {
