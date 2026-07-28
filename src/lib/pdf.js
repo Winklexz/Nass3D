@@ -128,7 +128,7 @@ export function generateOrcamentoPdf({
   doc.save(`orcamento-${numero}-${cliente.replace(/\s+/g, '-').toLowerCase()}.pdf`)
 }
 
-export function generateRelatorioPdf({ ym, mesLabel, receita, lucro, totalCriados, fechados, perdidos, emAberto }) {
+export function generateRelatorioPdf({ ym, mesLabel, receita, lucro, totalCriados, fechados, perdidos, emAberto, ranking = [] }) {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   const pageW = 210
   let y = 20
@@ -158,6 +158,38 @@ export function generateRelatorioPdf({ ym, mesLabel, receita, lucro, totalCriado
     doc.text(val, pageW - 15, y, { align: 'right' })
     y += 10
   })
+
+  if (ranking.length > 0) {
+    y += 8
+    doc.setDrawColor(225); doc.line(15, y, pageW - 15, y)
+    y += 10
+
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(20)
+    doc.text('Lucratividade por produto', 15, y)
+    y += 9
+
+    const cols = [
+      { x: 15, align: 'left' },
+      { x: 110, align: 'right' },
+      { x: 140, align: 'right' },
+      { x: 170, align: 'right' },
+      { x: pageW - 15, align: 'right' },
+    ]
+    const header = ['Produto', 'Qtd', 'Receita', 'Lucro', 'Margem']
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(140)
+    header.forEach((h, i) => doc.text(h, cols[i].x, y, { align: cols[i].align }))
+    y += 6
+
+    ranking.forEach(row => {
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(20)
+      doc.text(row.nome, cols[0].x, y, { align: cols[0].align })
+      doc.text(String(row.qtd), cols[1].x, y, { align: cols[1].align })
+      doc.text(fmtBRL(row.receita), cols[2].x, y, { align: cols[2].align })
+      doc.text(fmtBRL(row.lucro), cols[3].x, y, { align: cols[3].align })
+      doc.text(`${Math.round(row.margem)}%`, cols[4].x, y, { align: cols[4].align })
+      y += 7.5
+    })
+  }
 
   doc.save(`relatorio-${ym}.pdf`)
 }

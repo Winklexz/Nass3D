@@ -42,7 +42,7 @@ export default function Relatorio() {
     const [yy, mm] = ym.split('-')
     let mesLabel = new Date(yy, mm - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
     mesLabel = mesLabel.charAt(0).toUpperCase() + mesLabel.slice(1)
-    generateRelatorioPdf({ ym, mesLabel, ...r })
+    generateRelatorioPdf({ ym, mesLabel, ...r, ranking })
   }
 
   return (
