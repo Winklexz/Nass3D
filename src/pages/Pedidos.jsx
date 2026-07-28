@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { MessageCircle } from 'lucide-react'
+import { MessageCircle, Download } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -9,9 +9,20 @@ import {
 } from '@/components/ui/select'
 import DataTable, { textCell, numberCell, dateCell, selectCell } from '@/components/shared/DataTable'
 import { useCollection } from '@/hooks/useCollection'
-import { waLink, pedidoRowFlag } from '@/lib/format'
+import { waLink, pedidoRowFlag, todayStr } from '@/lib/format'
+import { exportCsv, fmtCsvNumber } from '@/lib/csv'
 
 const STATUS_OPTIONS = ['Orçamento', 'Pendente', 'Em produção', 'Pronto', 'Entregue', 'Perdido']
+
+const PEDIDOS_CSV_COLUMNS = [
+  { key: 'cliente', label: 'Cliente' },
+  { key: 'telefone', label: 'Telefone' },
+  { key: 'item', label: 'Item' },
+  { key: 'prazo', label: 'Prazo' },
+  { key: 'status', label: 'Status' },
+  { key: 'valor', label: 'Valor (R$)', format: (row) => fmtCsvNumber(row.valor) },
+  { key: 'criadoEm', label: 'Criado em' },
+]
 
 export default function Pedidos() {
   const { data: orders, add, update, remove } = useCollection('orders')
@@ -98,7 +109,18 @@ export default function Pedidos() {
         <CardContent className="p-0">
           <div className="mb-4 flex items-center justify-between border-b border-border pb-2.5">
             <span className="font-ui text-sm font-bold uppercase tracking-wide">Pedidos</span>
-            <span className="font-mono text-xs text-muted-foreground">{orders.length}</span>
+            <div className="flex items-center gap-3">
+              <span className="font-mono text-xs text-muted-foreground">{orders.length}</span>
+              {orders.length > 0 && (
+                <Button
+                  variant="ghost" size="sm"
+                  className="h-7 gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground"
+                  onClick={() => exportCsv(`pedidos-${todayStr()}.csv`, orders, PEDIDOS_CSV_COLUMNS)}
+                >
+                  <Download size={13} /> Exportar CSV
+                </Button>
+              )}
+            </div>
           </div>
           <DataTable
             columns={columns}

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Download } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -11,7 +12,16 @@ import {
 } from '@/components/ui/dialog'
 import DataTable from '@/components/shared/DataTable'
 import { useCollection } from '@/hooks/useCollection'
-import { resolveColorInput, buildFilamentName, fmtNum } from '@/lib/format'
+import { resolveColorInput, buildFilamentName, fmtNum, todayStr } from '@/lib/format'
+import { exportCsv, fmtCsvNumber } from '@/lib/csv'
+
+const MATERIALS_CSV_COLUMNS = [
+  { key: 'nome', label: 'Nome' },
+  { key: 'tipo', label: 'Tipo' },
+  { key: 'cor', label: 'Cor' },
+  { key: 'preco', label: 'Preço/kg (R$)', format: (row) => fmtCsvNumber(row.preco) },
+  { key: 'estoque', label: 'Estoque (g)', format: (row) => fmtCsvNumber(row.estoque) },
+]
 
 const TIPOS = ['PLA', 'PETG', 'ABS', 'TPU', 'ASA', 'Nylon', 'Outro']
 
@@ -127,7 +137,18 @@ export default function Materiais() {
         <CardContent className="p-0">
           <div className="mb-4 flex items-center justify-between border-b border-border pb-2.5">
             <span className="font-ui text-sm font-bold uppercase tracking-wide">Meus materiais</span>
-            <span className="font-mono text-xs text-muted-foreground">{materials.length}</span>
+            <div className="flex items-center gap-3">
+              <span className="font-mono text-xs text-muted-foreground">{materials.length}</span>
+              {materials.length > 0 && (
+                <Button
+                  variant="ghost" size="sm"
+                  className="h-7 gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground"
+                  onClick={() => exportCsv(`materiais-${todayStr()}.csv`, materials, MATERIALS_CSV_COLUMNS)}
+                >
+                  <Download size={13} /> Exportar CSV
+                </Button>
+              )}
+            </div>
           </div>
           <DataTable
             columns={columns}

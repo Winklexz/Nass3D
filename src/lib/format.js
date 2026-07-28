@@ -15,6 +15,11 @@ export function newId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7)
 }
 
+export function todayStr() {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 export const COLOR_NAMES = {
   vermelho: '#e63946', azul: '#1d63d1', verde: '#2ecc71', amarelo: '#f4d03f',
   preto: '#161616', branco: '#f5f5f5', cinza: '#8a8d93', roxo: '#8e44ad',

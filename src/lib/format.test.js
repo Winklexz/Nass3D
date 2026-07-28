@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   fmtBRL, fmtNum, resolveColorInput, capitalizeWords, buildFilamentName,
-  waLink, pedidoRowFlag, hexToRgb, colorDistance, findClosestMaterial, roundUpTo,
+  waLink, pedidoRowFlag, hexToRgb, colorDistance, findClosestMaterial, roundUpTo, todayStr,
 } from './format.js'
 
 describe('fmtBRL', () => {
@@ -104,5 +104,17 @@ describe('roundUpTo', () => {
 
   it('returns 0 for a value of 0', () => {
     expect(roundUpTo(0, 5)).toBe(0)
+  })
+})
+
+describe('todayStr', () => {
+  it('returns today in YYYY-MM-DD using local date components', () => {
+    const d = new Date()
+    const expected = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    expect(todayStr()).toBe(expected)
+  })
+
+  it('matches the YYYY-MM-DD shape', () => {
+    expect(todayStr()).toMatch(/^\d{4}-\d{2}-\d{2}$/)
   })
 })

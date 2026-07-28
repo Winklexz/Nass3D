@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Download } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -8,7 +9,16 @@ import {
 } from '@/components/ui/select'
 import DataTable, { textCell, numberCell, dateCell } from '@/components/shared/DataTable'
 import { useCollection } from '@/hooks/useCollection'
-import { fmtBRL } from '@/lib/format'
+import { fmtBRL, todayStr } from '@/lib/format'
+import { exportCsv, fmtCsvNumber } from '@/lib/csv'
+
+const VENDAS_CSV_COLUMNS = [
+  { key: 'data', label: 'Data' },
+  { key: 'produto', label: 'Produto' },
+  { key: 'comprador', label: 'Comprador' },
+  { key: 'contato', label: 'Contato' },
+  { key: 'valor', label: 'Valor (R$)', format: (row) => fmtCsvNumber(row.valor) },
+]
 
 export default function Vendas() {
   const { data: sales, add, update, remove } = useCollection('sales')
@@ -115,7 +125,18 @@ export default function Vendas() {
         <CardContent className="p-0">
           <div className="mb-3 flex items-center justify-between border-b border-border pb-2.5">
             <span className="font-ui text-sm font-bold uppercase tracking-wide">Vendas</span>
-            <span className="font-mono text-xs text-muted-foreground">{sales.length}</span>
+            <div className="flex items-center gap-3">
+              <span className="font-mono text-xs text-muted-foreground">{sales.length}</span>
+              {sales.length > 0 && (
+                <Button
+                  variant="ghost" size="sm"
+                  className="h-7 gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground"
+                  onClick={() => exportCsv(`vendas-${todayStr()}.csv`, sales, VENDAS_CSV_COLUMNS)}
+                >
+                  <Download size={13} /> Exportar CSV
+                </Button>
+              )}
+            </div>
           </div>
           <div className="mb-3 rounded-lg border border-border bg-white/[0.03] px-3 py-2.5 font-mono text-sm text-success">
             Total vendido: {fmtBRL(total)}

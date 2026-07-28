@@ -62,11 +62,17 @@ Security).
   - `gcode.js` — `parseGcode()` e helpers, leitura de metadados de arquivos `.gcode`
     (Bambu/Orca/Prusa/Cura)
   - `pdf.js` — `generateOrcamentoPdf()`/`generateRelatorioPdf()` via jsPDF
+  - `csv.js` — `exportCsv(filename, rows, columns)` (adicionado em 2026-07-27), usado pelos botões
+    "Exportar CSV" de Materiais/Pedidos/Vendas; `toCsv()` monta o texto (separador `;`, não `,` —
+    convenção brasileira, já que `,` é separador decimal no Excel em pt-BR — com BOM UTF-8 na
+    frente pra acentuação abrir certo) e `fmtCsvNumber()` formata número com vírgula decimal e
+    arredonda pra 2 casas (evita expor ruído de ponto flutuante tipo `3.1672000000000002` num
+    arquivo que vai pro contador)
   - `supabaseClient.js` — cria o client do Supabase a partir de `import.meta.env.VITE_SUPABASE_URL`
     / `VITE_SUPABASE_ANON_KEY` (lança erro se faltar alguma — ver seção Deploy)
   - `utils.js` — `cn()` (merge de classes Tailwind, padrão gerado pelo shadcn/ui)
   - Cada módulo de lógica tem um `*.test.js` ao lado (`format.test.js`, `tables.test.js`,
-    `calc.test.js`, `gcode.test.js`), rodados com `npm test` (Vitest)
+    `calc.test.js`, `gcode.test.js`, `csv.test.js`), rodados com `npm test` (Vitest)
 - [supabase-schema.sql](supabase-schema.sql) — SQL das 5 tabelas + políticas de RLS, mesma base da
   versão estática, mais os `alter table` de `materials.tipo` e das 7 colunas novas de `settings`
   adicionados em 2026-07-26 (roda uma vez no SQL Editor do Supabase)
