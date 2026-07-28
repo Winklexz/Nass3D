@@ -38,11 +38,23 @@ export default function Relatorio() {
 
   const ranking = useMemo(() => rankProductProfitability(sales, products, ym), [sales, products, ym])
 
+  const [exporting, setExporting] = useState(false)
+  const [exportStatus, setExportStatus] = useState(null)
+
   async function handleExport() {
-    const [yy, mm] = ym.split('-')
-    let mesLabel = new Date(yy, mm - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
-    mesLabel = mesLabel.charAt(0).toUpperCase() + mesLabel.slice(1)
-    await generateRelatorioPdf({ ym, mesLabel, ...r, ranking })
+    if (exporting) return
+    setExporting(true)
+    setExportStatus(null)
+    try {
+      const [yy, mm] = ym.split('-')
+      let mesLabel = new Date(yy, mm - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+      mesLabel = mesLabel.charAt(0).toUpperCase() + mesLabel.slice(1)
+      await generateRelatorioPdf({ ym, mesLabel, ...r, ranking })
+    } catch {
+      setExportStatus({ type: 'err', text: 'Não consegui gerar o PDF agora — tente de novo.' })
+    } finally {
+      setExporting(false)
+    }
   }
 
   return (
@@ -115,9 +127,14 @@ export default function Relatorio() {
           </p>
 
           <div className="flex gap-2.5">
-            <Button className="flex-1" onClick={handleExport}>📄 Exportar relatório em PDF</Button>
+            <Button className="flex-1" onClick={handleExport} disabled={exporting}>📄 Exportar relatório em PDF</Button>
             <Button variant="outline" onClick={() => window.print()}>🖨️ Imprimir</Button>
           </div>
+          {exportStatus && (
+            <div className="mt-2.5 rounded-lg bg-destructive/10 px-3 py-2.5 text-xs leading-relaxed text-destructive">
+              {exportStatus.text}
+            </div>
+          )}
           <p className="mt-2.5 text-xs text-muted-foreground">
             "Pedidos criados neste mês" considera a data em que cada pedido foi cadastrado no sistema, não a data do prazo de entrega.
           </p>
