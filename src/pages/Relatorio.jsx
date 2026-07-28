@@ -2,10 +2,12 @@ import { useMemo, useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table'
 import { useCollection } from '@/hooks/useCollection'
-import { fmtBRL } from '@/lib/format'
+import { fmtBRL, fmtNum } from '@/lib/format'
 import StatCard from '@/components/shared/StatCard'
 import { generateRelatorioPdf } from '@/lib/pdf'
+import { rankProductProfitability } from '@/lib/reports'
 
 function currentYm() {
   const d = new Date()
@@ -33,6 +35,8 @@ export default function Relatorio() {
     const emAberto = criadosNoMes.length - fechados - perdidos
     return { receita, lucro, totalCriados: criadosNoMes.length, fechados, perdidos, emAberto }
   }, [sales, orders, products, ym])
+
+  const ranking = useMemo(() => rankProductProfitability(sales, products, ym), [sales, products, ym])
 
   function handleExport() {
     const [yy, mm] = ym.split('-')
@@ -74,6 +78,41 @@ export default function Relatorio() {
               <span>⏳ Ainda em aberto</span><span className="font-mono font-semibold text-warning">{r.emAberto}</span>
             </div>
           </div>
+
+          <div className="mb-2.5 text-[11px] uppercase tracking-wide text-muted-foreground">Lucratividade por produto</div>
+          {ranking.length === 0 ? (
+            <p className="mb-5 py-4 text-center text-xs text-muted-foreground">
+              Nenhuma venda de um produto do catálogo neste mês.
+            </p>
+          ) : (
+            <div className="mb-5 overflow-x-auto rounded-lg border border-border">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-border/60 hover:bg-transparent">
+                    <TableHead className="text-[10px] uppercase tracking-wide text-muted-foreground">Produto</TableHead>
+                    <TableHead className="text-[10px] uppercase tracking-wide text-muted-foreground">Qtd</TableHead>
+                    <TableHead className="text-[10px] uppercase tracking-wide text-muted-foreground">Receita</TableHead>
+                    <TableHead className="text-[10px] uppercase tracking-wide text-muted-foreground">Lucro</TableHead>
+                    <TableHead className="text-[10px] uppercase tracking-wide text-muted-foreground">Margem</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {ranking.map(row => (
+                    <TableRow key={row.id} className="border-border/60 last:border-0">
+                      <TableCell className="py-2 text-xs">{row.nome}</TableCell>
+                      <TableCell className="py-2 font-mono text-xs">{row.qtd}</TableCell>
+                      <TableCell className="py-2 font-mono text-xs">{fmtBRL(row.receita)}</TableCell>
+                      <TableCell className={`py-2 font-mono text-xs ${row.lucro >= 0 ? 'text-success' : 'text-destructive'}`}>{fmtBRL(row.lucro)}</TableCell>
+                      <TableCell className="py-2 font-mono text-xs">{fmtNum(row.margem, 0)}%</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+          <p className="mb-5 text-xs text-muted-foreground">
+            Considera só vendas cujo nome do produto bate com um item cadastrado em Produtos — vendas avulsas ou vindas de um pedido personalizado não entram nesse ranking.
+          </p>
 
           <div className="flex gap-2.5">
             <Button className="flex-1" onClick={handleExport}>📄 Exportar relatório em PDF</Button>

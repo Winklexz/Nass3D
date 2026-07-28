@@ -68,11 +68,17 @@ Security).
     frente pra acentuação abrir certo) e `fmtCsvNumber()` formata número com vírgula decimal e
     arredonda pra 2 casas (evita expor ruído de ponto flutuante tipo `3.1672000000000002` num
     arquivo que vai pro contador)
+  - `reports.js` — `rankProductProfitability(sales, products, ym)` (adicionado em 2026-07-27),
+    usado pela seção "Lucratividade por produto" em Relatorio.jsx; cruza `sales.produto` com
+    `products.nome` por **igualdade exata de string** (mesma convenção já usada no cálculo de
+    lucro mensal da mesma página) — vendas cujo texto não bate com nenhum produto cadastrado
+    (ex: item avulso vindo de um pedido personalizado) ficam de fora do ranking, não são erro
   - `supabaseClient.js` — cria o client do Supabase a partir de `import.meta.env.VITE_SUPABASE_URL`
     / `VITE_SUPABASE_ANON_KEY` (lança erro se faltar alguma — ver seção Deploy)
   - `utils.js` — `cn()` (merge de classes Tailwind, padrão gerado pelo shadcn/ui)
   - Cada módulo de lógica tem um `*.test.js` ao lado (`format.test.js`, `tables.test.js`,
-    `calc.test.js`, `gcode.test.js`, `csv.test.js`), rodados com `npm test` (Vitest)
+    `calc.test.js`, `gcode.test.js`, `csv.test.js`, `reports.test.js`), rodados com `npm test`
+    (Vitest)
 - [supabase-schema.sql](supabase-schema.sql) — SQL das 5 tabelas + políticas de RLS, mesma base da
   versão estática, mais os `alter table` de `materials.tipo` e das 7 colunas novas de `settings`
   adicionados em 2026-07-26 (roda uma vez no SQL Editor do Supabase)
