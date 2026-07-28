@@ -11,10 +11,16 @@ export default function Produtos() {
   const [nome, setNome] = useState('')
   const [preco, setPreco] = useState('0')
   const [custo, setCusto] = useState('0')
+  const [addStatus, setAddStatus] = useState(null)
 
   async function handleAdd() {
     if (!nome.trim()) return
-    await add({ nome: nome.trim(), preco: parseFloat(preco) || 0, custo: parseFloat(custo) || 0 })
+    const { error } = await add({ nome: nome.trim(), preco: parseFloat(preco) || 0, custo: parseFloat(custo) || 0 })
+    if (error) {
+      setAddStatus({ type: 'err', text: 'Não consegui salvar o produto — tente de novo.' })
+      return
+    }
+    setAddStatus(null)
     setNome(''); setPreco('0'); setCusto('0')
   }
 
@@ -46,6 +52,11 @@ export default function Produtos() {
           </div>
           <Button onClick={handleAdd} className="md:col-span-4">Adicionar</Button>
         </CardContent>
+        {addStatus && (
+          <div className={`mt-2.5 rounded-lg px-3 py-2.5 text-xs leading-relaxed ${addStatus.type === 'ok' ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
+            {addStatus.text}
+          </div>
+        )}
       </Card>
 
       <Card className="glass-panel p-5">

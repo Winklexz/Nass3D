@@ -32,6 +32,7 @@ export default function Vendas() {
   const [contato, setContato] = useState('')
   const [valor, setValor] = useState('0')
   const [submitting, setSubmitting] = useState(false)
+  const [addStatus, setAddStatus] = useState(null)
 
   const pedidosAbertos = orders.filter(o => o.status !== 'Entregue')
 
@@ -50,11 +51,23 @@ export default function Vendas() {
     if (!produto.trim() && !comprador.trim()) return
     setSubmitting(true)
     try {
-      await add({
+      const { error } = await add({
         data, produto: produto.trim(), comprador: comprador.trim(), contato: contato.trim(),
         valor: parseFloat(valor) || 0, pedidoId: pedidoId || null,
       })
-      if (pedidoId) await updateOrder(pedidoId, { status: 'Entregue' })
+      if (error) {
+        setAddStatus({ type: 'err', text: 'Não consegui salvar a venda — tente de novo.' })
+        return
+      }
+      if (pedidoId) {
+        const { error: orderError } = await updateOrder(pedidoId, { status: 'Entregue' })
+        if (orderError) {
+          setAddStatus({ type: 'err', text: 'Venda salva, mas não consegui marcar o pedido como "Entregue" — atualize o status manualmente na aba Pedidos.' })
+          setPedidoId(''); setData(''); setProduto(''); setComprador(''); setContato(''); setValor('0')
+          return
+        }
+      }
+      setAddStatus(null)
       setPedidoId(''); setData(''); setProduto(''); setComprador(''); setContato(''); setValor('0')
     } finally {
       setSubmitting(false)
@@ -115,6 +128,11 @@ export default function Vendas() {
           </div>
           <Button onClick={handleAdd} disabled={submitting} className="lg:col-span-6">Registrar</Button>
         </CardContent>
+        {addStatus && (
+          <div className={`mt-2.5 rounded-lg px-3 py-2.5 text-xs leading-relaxed ${addStatus.type === 'ok' ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
+            {addStatus.text}
+          </div>
+        )}
         <p className="mt-3 text-xs text-muted-foreground">
           Ligar a um pedido preenche produto, comprador e valor automaticamente, e marca o pedido como
           "Entregue" ao registrar a venda.

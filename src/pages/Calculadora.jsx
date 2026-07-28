@@ -276,10 +276,10 @@ export default function Calculadora() {
   }
 
   async function handleExportOrcamento() {
-    // orcSubmittingRef is checked/set synchronously (unlike the orcSubmitting state, which only
-    // takes effect once React re-renders) so a second click that lands before the PDF's synchronous
-    // generation work yields back to the event loop is still blocked. orcSubmitting state stays in
-    // sync with it purely to drive the button's disabled prop.
+    // orcSubmittingRef is checked/set synchronously, on the very first line, before any await —
+    // unlike the orcSubmitting state (which only takes effect once React re-renders) — so a second
+    // click landing before the button's disabled prop updates is still blocked. orcSubmitting state
+    // stays in sync with it purely to drive that disabled prop.
     if (orcSubmittingRef.current) return
     if (!orcCliente.trim() || !orcDescricao.trim()) {
       setOrcStatus({ type: 'err', text: 'Preencha ao menos o nome do cliente e a descrição do serviço.' })
@@ -290,7 +290,7 @@ export default function Calculadora() {
     try {
       const numero = String((settings.orcamentoNumero || 0) + 1).padStart(3, '0')
       try {
-        generateOrcamentoPdf({
+        await generateOrcamentoPdf({
           numero, empresa: settings.empresaNome || 'Minha Empresa', logoDataUrl: settings.logoDataUrl,
           cliente: orcCliente.trim(), descricao: orcDescricao.trim(), material: orcMaterial.trim(),
           quantidade: orcQuantidade, prazo: orcPrazo.trim(), validade: orcValidade.trim(),

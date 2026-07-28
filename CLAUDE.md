@@ -157,7 +157,13 @@ dava `upsert` no resto) toda vez que qualquer linha mudava. Agora, `useCollectio
 - `remove(id)` → `delete().eq('id', id)` de uma linha só
 
 Cada página de CRUD (Materiais/Produtos/Pedidos/Vendas) chama essas três funções diretamente nos
-handlers de UI, sem reconstruir nem regravar o array inteiro a cada edição. `useSettings.js`
+handlers de UI, sem reconstruir nem regravar o array inteiro a cada edição. Os formulários de
+"Adicionar" das 4 páginas conferem o `{ error }` devolvido por `add()` antes de limpar o campo,
+mostrando uma mensagem de erro em vez de fingir sucesso (padrão igualado entre as páginas em
+2026-07-27 — antes só Materiais fazia essa checagem; Produtos/Pedidos/Vendas limpavam o formulário
+mesmo quando o salvamento falhava). A edição inline por célula (`textCell`/`numberCell`/etc. em
+`DataTable.jsx`) e o botão de excluir **ainda não** checam erro — ficou de fora dessa rodada porque
+exigiria decidir um mecanismo de aviso (toast/banner) compartilhado pela tabela inteira. `useSettings.js`
 continua fazendo `upsert` com `onConflict: 'user_id'` (não muda, porque `settings` sempre foi uma
 linha única, nunca teve o problema de diff de array). A conversão camelCase (app) ↔ snake_case
 (banco) que antes vivia num objeto `TABLES` dentro de `script.js` agora está em
@@ -274,9 +280,17 @@ push dessa branch pra `origin` dispara um **Preview deployment** da Vercel (não
 produção) — o merge pra `main` é o que efetivamente publica o novo visual em
 `nass3-d.vercel.app`.
 
-Nota de build: `npm run build` avisa sobre um chunk principal >1MB (jsPDF + app inteiro num só
-bundle). Não é bloqueante, mas é uma oportunidade de otimização (code-splitting/`dynamic import`
-do jsPDF, por exemplo) se a performance de carregamento num dia vier a importar.
+Nota de build: `src/lib/pdf.js` importa o `jspdf` dinamicamente (`await import('jspdf')` dentro de
+`loadJsPDF()`, adicionado em 2026-07-27) em vez de no topo do arquivo — assim ele vira um chunk
+separado (`jspdf.es.min-*.js`, ~360KB) carregado só quando alguém realmente exporta um PDF
+(Calculadora/Relatório), não em toda página. Isso exige que `generateOrcamentoPdf`/
+`generateRelatorioPdf` sejam `async` — os dois pontos de chamada (`Calculadora.jsx`,
+`Relatorio.jsx`) já usam `await`. Ainda existe um aviso de build de chunk >500KB pro bundle
+principal (React + todas as páginas + Radix + Supabase + Framer Motion, tudo estático — nenhuma
+rota usa `React.lazy`); isso ficou bem menor que antes (caiu de ~1.07MB pra ~715KB só com o jsPDF
+fora), e dividir por rota seria o próximo passo se a performance de carregamento vier a importar
+mais — não foi feito porque é uma mudança maior (interage com as transições de página do Framer
+Motion) pelo ganho adicional que traria agora.
 
 ## Git
 

@@ -1,4 +1,3 @@
-import { jsPDF } from 'jspdf'
 import { fmtBRL } from './format'
 
 const BRAND_RED = [255, 36, 56]
@@ -7,10 +6,18 @@ const GRAY_DARK = [40, 40, 44]
 const GRAY_MED = [130, 130, 138]
 const GRAY_LIGHT = [235, 235, 238]
 
-export function generateOrcamentoPdf({
+// jsPDF is only needed on the two pages that export a PDF (Calculadora, Relatorio) — importing
+// it dynamically keeps it out of the main bundle for every other page (Painel, Materiais, etc.).
+async function loadJsPDF() {
+  const { jsPDF } = await import('jspdf')
+  return jsPDF
+}
+
+export async function generateOrcamentoPdf({
   numero, empresa, logoDataUrl, cliente, descricao, material, quantidade,
   prazo, validade, forma1, desc1, forma2, desc2, obs, base,
 }) {
+  const jsPDF = await loadJsPDF()
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   const pageW = 210
   const marginX = 15
@@ -128,7 +135,8 @@ export function generateOrcamentoPdf({
   doc.save(`orcamento-${numero}-${cliente.replace(/\s+/g, '-').toLowerCase()}.pdf`)
 }
 
-export function generateRelatorioPdf({ ym, mesLabel, receita, lucro, totalCriados, fechados, perdidos, emAberto, ranking = [] }) {
+export async function generateRelatorioPdf({ ym, mesLabel, receita, lucro, totalCriados, fechados, perdidos, emAberto, ranking = [] }) {
+  const jsPDF = await loadJsPDF()
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   const pageW = 210
   let y = 20

@@ -37,13 +37,19 @@ export default function Pedidos() {
   const [prazo, setPrazo] = useState('')
   const [status, setStatus] = useState('Pendente')
   const [valor, setValor] = useState('0')
+  const [addStatus, setAddStatus] = useState(null)
 
   async function handleAdd() {
     if (!cliente.trim() && !item.trim()) return
-    await add({
+    const { error } = await add({
       cliente: cliente.trim(), telefone: telefone.trim(), item: item.trim(),
       prazo, status, valor: parseFloat(valor) || 0, criadoEm: new Date().toISOString(),
     })
+    if (error) {
+      setAddStatus({ type: 'err', text: 'Não consegui salvar o pedido — tente de novo.' })
+      return
+    }
+    setAddStatus(null)
     setCliente(''); setTelefone(''); setItem(''); setPrazo(''); setStatus('Pendente'); setValor('0')
   }
 
@@ -108,6 +114,11 @@ export default function Pedidos() {
           </div>
           <Button onClick={handleAdd} className="lg:col-span-6">Adicionar</Button>
         </CardContent>
+        {addStatus && (
+          <div className={`mt-2.5 rounded-lg px-3 py-2.5 text-xs leading-relaxed ${addStatus.type === 'ok' ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
+            {addStatus.text}
+          </div>
+        )}
       </Card>
 
       <Card className="glass-panel p-5">

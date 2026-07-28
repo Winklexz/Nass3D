@@ -38,11 +38,11 @@ export default function Relatorio() {
 
   const ranking = useMemo(() => rankProductProfitability(sales, products, ym), [sales, products, ym])
 
-  function handleExport() {
+  async function handleExport() {
     const [yy, mm] = ym.split('-')
     let mesLabel = new Date(yy, mm - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
     mesLabel = mesLabel.charAt(0).toUpperCase() + mesLabel.slice(1)
-    generateRelatorioPdf({ ym, mesLabel, ...r, ranking })
+    await generateRelatorioPdf({ ym, mesLabel, ...r, ranking })
   }
 
   return (
