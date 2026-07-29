@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Menu } from 'lucide-react'
@@ -39,7 +39,9 @@ export default function AppLayout() {
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.25, ease: 'easeOut' }}
             >
-              <Outlet />
+              <Suspense fallback={<div className="py-20 text-center text-sm text-muted-foreground">Carregando...</div>}>
+                <Outlet />
+              </Suspense>
             </motion.div>
           </AnimatePresence>
         </div>

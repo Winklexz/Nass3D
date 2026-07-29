@@ -259,6 +259,16 @@ mudança de tela/funcionalidade existente.
 - **Testar localmente**: `npm run dev` **não** ativa o service worker (só roda em build de
   produção). Use `npm run build && npm run preview` pra testar o comportamento real de PWA.
 
+## SEO / indexação
+
+[public/robots.txt](public/robots.txt) (adicionado em 2026-07-28) bloqueia todo crawler (`Disallow:
+/`) — decisão deliberada, não esquecimento: o app inteiro fica atrás de login (única rota pública é
+`/login`, sem conteúdo pra indexar), então não há ganho em permitir indexação e sim um risco pequeno
+e desnecessário de a tela de login aparecer em buscas por "Nass3D". Antes desse arquivo existir,
+`/robots.txt` caía no rewrite de SPA do `vercel.json` e devolvia `index.html` como se fosse um
+robots.txt válido — bug de infraestrutura, não intenção. Por esse mesmo motivo (nada de conteúdo
+público pra listar, e contradiria o `Disallow: /`), não existe `sitemap.xml`.
+
 ## Deploy
 
 - **Site (produção)**: https://nass3-d.vercel.app — publica a partir da branch `main`
@@ -292,12 +302,19 @@ Nota de build: `src/lib/pdf.js` importa o `jspdf` dinamicamente (`await import('
 separado (`jspdf.es.min-*.js`, ~360KB) carregado só quando alguém realmente exporta um PDF
 (Calculadora/Relatório), não em toda página. Isso exige que `generateOrcamentoPdf`/
 `generateRelatorioPdf` sejam `async` — os dois pontos de chamada (`Calculadora.jsx`,
-`Relatorio.jsx`) já usam `await`. Ainda existe um aviso de build de chunk >500KB pro bundle
-principal (React + todas as páginas + Radix + Supabase + Framer Motion, tudo estático — nenhuma
-rota usa `React.lazy`); isso ficou bem menor que antes (caiu de ~1.07MB pra ~715KB só com o jsPDF
-fora), e dividir por rota seria o próximo passo se a performance de carregamento vier a importar
-mais — não foi feito porque é uma mudança maior (interage com as transições de página do Framer
-Motion) pelo ganho adicional que traria agora.
+`Relatorio.jsx`) já usam `await`. Em 2026-07-28, as 7 páginas autenticadas (`Painel`/`Calculadora`/
+`Materiais`/`Produtos`/`Pedidos`/`Vendas`/`Relatorio`) passaram a ser importadas via `React.lazy()`
+em `src/App.jsx` — cada uma virou um chunk próprio, buscado só na primeira navegação até aquela
+rota; `Login.jsx` continua com import estático normal (é a primeira coisa que qualquer visitante
+sem sessão precisa, não faz sentido adiar). O `<Outlet />` em
+[src/components/layout/AppLayout.jsx](src/components/layout/AppLayout.jsx) ficou envolvido num
+`<Suspense fallback={...}>` **dentro** do `motion.div` da transição de rota (não por fora) — assim
+a sidebar não pisca durante o carregamento do chunk, e o `AnimatePresence mode="wait"` continua
+funcionando normalmente (a página nova só começa a animar depois que o chunk carrega e o Suspense
+resolve). Isso derrubou o bundle principal de ~715KB pra ~578KB (gzip: 215KB → 175KB); ainda
+aparece o aviso de chunk >500KB (React + Radix + Supabase + Framer Motion + Login, tudo que
+realmente precisa estar disponível antes do login) — dividir isso mais teria retorno pequeno pelo
+esforço, não é considerado prioridade agora.
 
 ## Git
 

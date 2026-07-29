@@ -1,14 +1,20 @@
+import { lazy } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from '@/context/AuthContext'
 import Login from '@/pages/Login'
-import Painel from '@/pages/Painel'
-import Calculadora from '@/pages/Calculadora'
-import Materiais from '@/pages/Materiais'
-import Produtos from '@/pages/Produtos'
-import Pedidos from '@/pages/Pedidos'
-import Vendas from '@/pages/Vendas'
-import Relatorio from '@/pages/Relatorio'
 import AppLayout from '@/components/layout/AppLayout'
+
+// Rotas autenticadas carregadas sob demanda: quem só vê a tela de login
+// (sessão expirada, primeiro acesso) não baixa o código das 7 páginas do
+// app inteiro de cara — cada uma vira um chunk separado, buscado só na
+// primeira navegação até ela.
+const Painel = lazy(() => import('@/pages/Painel'))
+const Calculadora = lazy(() => import('@/pages/Calculadora'))
+const Materiais = lazy(() => import('@/pages/Materiais'))
+const Produtos = lazy(() => import('@/pages/Produtos'))
+const Pedidos = lazy(() => import('@/pages/Pedidos'))
+const Vendas = lazy(() => import('@/pages/Vendas'))
+const Relatorio = lazy(() => import('@/pages/Relatorio'))
 
 function AppRoutes() {
   const { user, loading } = useAuth()
