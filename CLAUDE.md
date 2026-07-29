@@ -238,7 +238,14 @@ redesign; resumo do que foi decidido e por quê, pra quem for mexer na UI depois
   [src/components/layout/Sidebar.jsx](src/components/layout/Sidebar.jsx) antes de trocar o arquivo
   de logo, porque provavelmente vai precisar recalibrar. Se a logo mudar, regenere tanto
   `src/assets/logo-source.png` (alta resolução, pra ícones) quanto `public/logo-nass3d.webp`
-  (versão leve pra UI).
+  (versão leve pra UI). `public/logo-nass3d.png` (PNG 512×512, ~122KB) também existe e **não é
+  referenciado por nenhum componente** — é só uma ponte de compatibilidade adicionada em
+  2026-07-29 depois que a troca pro `.webp` quebrou a logo pra quem tinha a versão anterior do
+  app em cache (service worker do PWA ou HTTP cache do navegador ainda pedindo o `.png` antigo);
+  sem esse arquivo, a requisição caía no rewrite de SPA da Vercel e voltava `index.html` como se
+  fosse imagem, mostrando o ícone de imagem quebrada. Seguro apagar esse arquivo depois que o
+  período de transição passar (na prática, quando não fizer mais sentido supor que algum cliente
+  ainda tem o build anterior em cache).
 - **Layout/navegação**: sidebar fixa à esquerda (~240px, `md:w-60`) com logo, os 7 itens de
   navegação (ícone `lucide-react` + label) e e-mail/botão Sair no rodapé
   (`src/components/layout/Sidebar.jsx`). Abaixo de 768px vira uma gaveta (`Sheet` do shadcn/ui)
@@ -304,10 +311,18 @@ Publicado na Vercel a partir do repositório no GitHub. A Vercel agora **auto-de
 como Vite** (por causa do `package.json`/`vite.config.js`) em vez de servir estático puro: build
 command `npm run build` (= `vite build`), saída em `dist/`.
 
-Um `vercel.json` na raiz faz rewrite de qualquer rota pra `index.html` (`{"rewrites": [{"source":
-"/(.*)", "destination": "/index.html"}]}`), necessário porque `react-router-dom` faz roteamento no
-cliente — sem isso, recarregar a página numa sub-rota (ex: `/materiais`) retornava 404 (bug
-encontrado e corrigido em 2026-07-26).
+Um `vercel.json` na raiz faz rewrite de rotas sem extensão de arquivo pra `index.html`
+(`{"rewrites": [{"source": "/((?!.*\\.[a-zA-Z0-9]+$).*)", "destination": "/index.html"}]}`),
+necessário porque `react-router-dom` faz roteamento no cliente — sem isso, recarregar a página numa
+sub-rota (ex: `/materiais`) retornava 404 (bug encontrado e corrigido em 2026-07-26). O padrão
+original era `"/(.*)"` (qualquer coisa, sem exceção) até 2026-07-29, quando isso causou um bug
+diferente: um asset estático removido (`public/logo-nass3d.png`, na troca pra `.webp`) parava de
+dar 404 e passava a devolver `index.html` com `content-type: text/html` — um `<img src>` apontando
+pra um arquivo inexistente carregava HTML em vez de imagem (ícone de imagem quebrada) ou, pior,
+mascarava o erro em vez de um 404 claro. A regex atual exclui qualquer caminho terminado em
+`.algumaCoisa` do rewrite (deixa cair no roteamento normal de arquivo estático da Vercel, que dá
+404 de verdade se o arquivo não existir) — rotas de página continuam funcionando normalmente porque
+nenhuma delas tem extensão (`/materiais`, `/calculadora`, etc.).
 
 Credenciais do Supabase **não são mais commitadas**: não existe mais `config.js` no repo. Em vez
 disso, `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` são configuradas como variáveis de ambiente
