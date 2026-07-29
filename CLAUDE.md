@@ -83,6 +83,14 @@ Security).
   - Cada módulo de lógica tem um `*.test.js` ao lado (`format.test.js`, `tables.test.js`,
     `calc.test.js`, `gcode.test.js`, `csv.test.js`, `reports.test.js`), rodados com `npm test`
     (Vitest)
+- Testes de componente (adicionado em 2026-07-29): `ErrorBoundary.test.jsx` e
+  `DataTable.test.jsx`, ao lado dos componentes em `src/components/shared/`, usando
+  `@testing-library/react`/`user-event` sobre `environment: 'jsdom'` (configurado em
+  `vitest.config.js`, que também ganhou o plugin do React e o alias `@` pra resolver os mesmos
+  imports que `vite.config.js` usa em runtime — `vitest.config.js` é lido no lugar de
+  `vite.config.js`, não em conjunto, então precisa repetir os dois). `src/test-setup.js` carrega os
+  matchers do `jest-dom` e registra `cleanup()` num `afterEach` manual (o auto-cleanup padrão da
+  Testing Library não dispara sozinho porque `test.globals` não está ligado aqui).
 - [supabase-schema.sql](supabase-schema.sql) — SQL das 5 tabelas + políticas de RLS, mesma base da
   versão estática, mais os `alter table` de `materials.tipo` e das 7 colunas novas de `settings`
   adicionados em 2026-07-26 (roda uma vez no SQL Editor do Supabase)
