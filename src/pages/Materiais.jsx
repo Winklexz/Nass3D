@@ -26,7 +26,7 @@ const MATERIALS_CSV_COLUMNS = [
 const TIPOS = ['PLA', 'PETG', 'ABS', 'TPU', 'ASA', 'Nylon', 'Outro']
 
 export default function Materiais() {
-  const { data: materials, add, update, remove } = useCollection('materials')
+  const { data: materials, error: loadError, add, update, remove } = useCollection('materials')
   const [corPicker, setCorPicker] = useState('#ff2438')
   const [corTexto, setCorTexto] = useState('')
   const [complemento, setComplemento] = useState('')
@@ -86,6 +86,12 @@ export default function Materiais() {
         Escreva a cor (nome ou hex) e o filamento já muda na hora. O nome é gerado sozinho como
         "Filamento &lt;Cor&gt;" — use o complemento pra detalhar (ex: roxo + lavanda).
       </p>
+
+      {loadError && (
+        <div aria-live="polite" className="mb-5 rounded-lg bg-destructive/10 px-3 py-2.5 text-xs leading-relaxed text-destructive">
+          Não consegui carregar seus dados — verifique sua conexão e recarregue a página.
+        </div>
+      )}
 
       <Card className="glass-panel mb-4 p-5">
         <CardContent className="grid grid-cols-1 gap-3 p-0 md:grid-cols-6 md:items-end">

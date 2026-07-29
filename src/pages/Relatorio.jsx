@@ -15,9 +15,10 @@ function currentYm() {
 }
 
 export default function Relatorio() {
-  const { data: sales } = useCollection('sales')
-  const { data: orders } = useCollection('orders')
-  const { data: products } = useCollection('products')
+  const { data: sales, error: salesError } = useCollection('sales')
+  const { data: orders, error: ordersError } = useCollection('orders')
+  const { data: products, error: productsError } = useCollection('products')
+  const loadError = salesError || ordersError || productsError
   const [ym, setYm] = useState(currentYm())
 
   const r = useMemo(() => {
@@ -62,6 +63,12 @@ export default function Relatorio() {
       <p className="mb-5 max-w-xl text-sm text-muted-foreground">
         Resumo financeiro por mês — receita, lucro e quantos pedidos fecharam ou não.
       </p>
+
+      {loadError && (
+        <div aria-live="polite" className="mb-5 rounded-lg bg-destructive/10 px-3 py-2.5 text-xs leading-relaxed text-destructive">
+          Não consegui carregar seus dados — verifique sua conexão e recarregue a página.
+        </div>
+      )}
 
       <Card className="glass-panel p-5">
         <CardContent className="p-0">

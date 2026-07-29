@@ -10,11 +10,12 @@ import AlertCard from '@/components/shared/AlertCard'
 const WEEKDAYS_PT = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
 
 export default function Painel() {
-  const { data: materials } = useCollection('materials')
-  const { data: products } = useCollection('products')
-  const { data: orders } = useCollection('orders')
-  const { data: sales } = useCollection('sales')
-  const { settings, save } = useSettings()
+  const { data: materials, error: materialsError } = useCollection('materials')
+  const { data: products, error: productsError } = useCollection('products')
+  const { data: orders, error: ordersError } = useCollection('orders')
+  const { data: sales, error: salesError } = useCollection('sales')
+  const { settings, save, error: settingsError } = useSettings()
+  const loadError = materialsError || productsError || ordersError || salesError || settingsError
   const [metaInput, setMetaInput] = useState(null)
 
   const now = new Date()
@@ -59,6 +60,12 @@ export default function Painel() {
       <p className="mb-6 max-w-lg text-sm text-muted-foreground">
         Visão geral do negócio: pedidos, dinheiro a receber e o resumo do mês. Tudo num lugar só.
       </p>
+
+      {loadError && (
+        <div aria-live="polite" className="mb-5 rounded-lg bg-destructive/10 px-3 py-2.5 text-xs leading-relaxed text-destructive">
+          Não consegui carregar seus dados — verifique sua conexão e recarregue a página.
+        </div>
+      )}
 
       <div className="mb-5 flex flex-col gap-2.5">
         {alerts.length === 0

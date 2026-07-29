@@ -7,7 +7,7 @@ import DataTable, { textCell, numberCell } from '@/components/shared/DataTable'
 import { useCollection } from '@/hooks/useCollection'
 
 export default function Produtos() {
-  const { data: products, add, update, remove } = useCollection('products')
+  const { data: products, error: loadError, add, update, remove } = useCollection('products')
   const [nome, setNome] = useState('')
   const [preco, setPreco] = useState('0')
   const [custo, setCusto] = useState('0')
@@ -35,6 +35,12 @@ export default function Produtos() {
       <p className="mb-5 max-w-xl text-sm text-muted-foreground">
         Seu catálogo de produtos prontos — cadastre aqui e escolha direto na hora de registrar uma venda.
       </p>
+
+      {loadError && (
+        <div aria-live="polite" className="mb-5 rounded-lg bg-destructive/10 px-3 py-2.5 text-xs leading-relaxed text-destructive">
+          Não consegui carregar seus dados — verifique sua conexão e recarregue a página.
+        </div>
+      )}
 
       <Card className="glass-panel mb-4 p-5">
         <CardContent className="grid grid-cols-1 gap-3 p-0 md:grid-cols-4 md:items-end">

@@ -30,7 +30,7 @@ const PEDIDOS_CSV_COLUMNS = [
 ]
 
 export default function Pedidos() {
-  const { data: orders, add, update, remove } = useCollection('orders')
+  const { data: orders, error: loadError, add, update, remove } = useCollection('orders')
   const [cliente, setCliente] = useState('')
   const [telefone, setTelefone] = useState('')
   const [item, setItem] = useState('')
@@ -80,6 +80,12 @@ export default function Pedidos() {
       <p className="mb-5 max-w-xl text-sm text-muted-foreground">
         Acompanhe os pedidos em produção, do cliente até a entrega.
       </p>
+
+      {loadError && (
+        <div aria-live="polite" className="mb-5 rounded-lg bg-destructive/10 px-3 py-2.5 text-xs leading-relaxed text-destructive">
+          Não consegui carregar seus dados — verifique sua conexão e recarregue a página.
+        </div>
+      )}
 
       <Card className="glass-panel mb-4 p-5">
         <CardContent className="grid grid-cols-1 gap-3 p-0 md:grid-cols-3 md:items-end lg:grid-cols-6">

@@ -34,10 +34,11 @@ const COST_PARTS_META = [
 ]
 
 export default function Calculadora() {
-  const { data: materials, update: updateMaterial } = useCollection('materials')
-  const { data: orders, add: addOrder } = useCollection('orders')
-  const { add: addProduct } = useCollection('products')
-  const { settings, save: saveSettings } = useSettings()
+  const { data: materials, error: materialsError, update: updateMaterial } = useCollection('materials')
+  const { data: orders, error: ordersError, add: addOrder } = useCollection('orders')
+  const { add: addProduct, error: productsError } = useCollection('products')
+  const { settings, save: saveSettings, error: settingsError } = useSettings()
+  const loadError = materialsError || ordersError || productsError || settingsError
 
   const [rows, setRows] = useState([{ weight: 0, price: 0, colorHex: COLOR_DEFAULTS[0], materialId: '' }])
   const [purgeGrams, setPurgeGrams] = useState(8)
@@ -325,6 +326,12 @@ export default function Calculadora() {
       <p className="mb-5 max-w-2xl text-sm text-muted-foreground">
         Preencha os campos com os dados da sua impressão ou arraste o .gcode pra puxar tempo, peso e cor de cada filamento sozinho.
       </p>
+
+      {loadError && (
+        <div aria-live="polite" className="mb-5 rounded-lg bg-destructive/10 px-3 py-2.5 text-xs leading-relaxed text-destructive">
+          Não consegui carregar seus dados — verifique sua conexão e recarregue a página.
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.15fr_1fr] lg:items-start">
         <div className="space-y-4">

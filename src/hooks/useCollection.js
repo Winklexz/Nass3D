@@ -10,16 +10,26 @@ export function useCollection(key) {
   const orderCol = key === 'orders' ? 'criado_em' : 'created_at'
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   const reload = useCallback(async () => {
     if (!user) return
     setLoading(true)
-    const { data: rows, error } = await supabase
+    const { data: rows, error: fetchError } = await supabase
       .from(table.name).select('*').eq('user_id', user.id).order(orderCol, { ascending: true })
-    if (!error) setData((rows || []).map(r => rowToObj(r, table.fields)))
-    else console.error('Erro ao carregar', key, error)
+    if (!fetchError) {
+      setData((rows || []).map(r => rowToObj(r, table.fields)))
+      setError(null)
+    } else {
+      // Keep `data` as whatever it last successfully held instead of clearing it — a
+      // failed reload (offline, Supabase hiccup) shouldn't make an account with real data
+      // look empty. `error` is surfaced by the pages so the user knows this isn't really
+      // an empty account.
+      console.error('Erro ao carregar', key, fetchError)
+      setError(fetchError)
+    }
     setLoading(false)
-  }, [user, table, orderCol])
+  }, [user, table, orderCol, key])
 
   useEffect(() => { reload() }, [reload])
 
@@ -44,5 +54,5 @@ export function useCollection(key) {
     return { error }
   }
 
-  return { data, loading, add, update, remove, reload }
+  return { data, loading, error, add, update, remove, reload }
 }
