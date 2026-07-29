@@ -111,12 +111,13 @@ Security).
 ### Dependências principais (`package.json`)
 - **Build/dev**: Vite 5, `@vitejs/plugin-react`, Tailwind CSS 3 + `tailwindcss-animate` +
   `autoprefixer`/`postcss`, Vitest (testes)
-- **UI**: React 18, `react-router-dom` 6, componentes Radix por trás do shadcn/ui
-  (`@radix-ui/react-dialog`/`react-label`/`react-select`/`react-slot`), `lucide-react` (ícones),
-  `class-variance-authority`/`clsx`/`tailwind-merge` (utilitários de classe do shadcn/ui)
+- **UI**: React 18, `react-router-dom` 7 (subiu de 6 em 2026-07-29, ver nota abaixo),
+  componentes Radix por trás do shadcn/ui (`@radix-ui/react-dialog`/`react-label`/`react-select`/
+  `react-slot`), `lucide-react` (ícones), `class-variance-authority`/`clsx`/`tailwind-merge`
+  (utilitários de classe do shadcn/ui)
 - **Animação**: `framer-motion`
 - **Backend/dados**: `@supabase/supabase-js`
-- **PDF**: `jspdf`
+- **PDF**: `jspdf` 4 (subiu de 2.5 em 2026-07-29, ver nota abaixo)
 - **PWA**: `vite-plugin-pwa` (dev), `@vite-pwa/assets-generator` (dev, só pra gerar ícones)
 
 Sem JavaScript puro/TypeScript misto — é tudo `.jsx`/`.js` puro (`jsconfig.json` só dá
@@ -390,6 +391,29 @@ usado por `Login.jsx`? não — o que sobra aqui é Button/Card/Input/Label, que
 primitivos que a tela de login usa) + Supabase + Framer Motion + Login) — dividir isso mais teria
 retorno pequeno pelo
 esforço, não é considerado prioridade agora.
+
+Em 2026-07-29, `npm audit` apontou vulnerabilidades reais em dependências de produção, corrigidas
+assim: `react-router-dom` subiu de `^6.26.0` pra `^7.18.2` (corrige "Open redirect via backslash in
+`<Link>`/`useNavigate`" e um advisory de constructor-injection em hidratação SSR — esse segundo nem
+se aplica aqui, já que o app é SPA puramente client-side, sem SSR) e `jspdf` subiu de `^2.5.1` pra
+`^4.2.1` (a partir da 3.0.0 o jsPDF já não depende mais obrigatoriamente de `dompurify`/
+`html2canvas`/`canvg` — viraram `optionalDependencies` só usadas pelo método `.html()`, que este
+projeto não chama; a 4.2.1 fixa o `dompurify` numa versão sem os advisories de XSS reportados). A
+API do jsPDF usada por `src/lib/pdf.js` (construtor `{unit, format}`, `setFillColor`/`rect`/
+`roundedRect`, `setTextColor`/`setFont`/`setFontSize`/`text`, `splitTextToSize`,
+`getImageProperties`/`addImage`, `setDrawColor`/`setLineWidth`/`line`, `save`) não mudou entre 2.x
+e 4.x — release notes do jsPDF 3.0.0/4.0.0 dizem explicitamente "no other breaking changes" fora do
+que já foi citado; testado localmente gerando um PDF de verdade com essas chamadas antes de subir a
+versão. `react-router-dom` não tem mais releases além da série 7.x (a partir da 8.0.0 o projeto
+unificou tudo no pacote `react-router`, sem `react-router-dom` separado) — por isso `npm audit`
+ainda acusa um advisory novo e diferente (`GHSA-qwww-vcr4-c8h2`, alto, sobre bypass de CSRF em
+"RSC Mode") contra a `react-router@7.18.2` instalada; a própria descrição do advisory diz que só
+afeta quem usa as APIs experimentais de RSC (React Server Components), que este app não usa (só
+`<BrowserRouter>`/`<Routes>`/`<Route>`/`<Navigate>`/`<NavLink>`/`<Outlet>`/`useLocation`/`<Link>`
+do modo declarativo) — não dá pra corrigir sem trocar de pacote (`react-router` 8.x), fora do
+escopo dessa correção pontual de segurança. A cadeia `brace-expansion`/`esbuild`/`sharp`/
+`vite-plugin-pwa` continua deliberadamente intocada — é tooling de build/dev, não vai pro bundle do
+navegador, e `npm audit fix --force` rebaixaria o `vite-plugin-pwa`, o que seria regressão.
 
 ## Git
 
