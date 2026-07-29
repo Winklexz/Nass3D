@@ -59,7 +59,7 @@ export default function Produtos() {
           <Button onClick={handleAdd} className="md:col-span-4">Adicionar</Button>
         </CardContent>
         {addStatus && (
-          <div className={`mt-2.5 rounded-lg px-3 py-2.5 text-xs leading-relaxed ${addStatus.type === 'ok' ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
+          <div role="status" className={`mt-2.5 rounded-lg px-3 py-2.5 text-xs leading-relaxed ${addStatus.type === 'ok' ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
             {addStatus.text}
           </div>
         )}

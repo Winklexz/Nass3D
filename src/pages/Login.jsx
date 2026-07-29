@@ -10,6 +10,7 @@ export default function Login() {
   const { login, signup } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [msg, setMsg] = useState('')
   const [msgType, setMsgType] = useState('')
   const [loading, setLoading] = useState(false)
@@ -27,6 +28,7 @@ export default function Login() {
   async function handleSignup() {
     if (!email || !password) { setMsg('Preencha e-mail e senha.'); setMsgType('err'); return }
     if (password.length < 8) { setMsg('A senha precisa ter pelo menos 8 caracteres.'); setMsgType('err'); return }
+    if (password !== confirmPassword) { setMsg('As senhas não coincidem.'); setMsgType('err'); return }
     setLoading(true); setMsg('Criando conta...'); setMsgType('')
     const { error, needsConfirmation } = await signup(email, password)
     setLoading(false)
@@ -60,8 +62,14 @@ export default function Login() {
                 <Input id="password" type="password" autoComplete="current-password" value={password}
                   onChange={e => setPassword(e.target.value)} placeholder="••••••••" />
               </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="confirm-password">Confirmar senha</Label>
+                <Input id="confirm-password" type="password" autoComplete="new-password" value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)} placeholder="••••••••" />
+                <p className="text-[11px] text-muted-foreground">Só é usada para criar uma conta nova — não afeta o botão Entrar.</p>
+              </div>
               {msg && (
-                <p className={
+                <p role="status" className={
                   msgType === 'err' ? 'text-xs text-destructive' :
                   msgType === 'ok' ? 'text-xs text-success' : 'text-xs text-muted-foreground'
                 }>{msg}</p>

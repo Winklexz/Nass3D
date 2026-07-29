@@ -51,7 +51,7 @@ export default function DataTable({ columns, rows, onUpdate, onRemove, onEdit, e
   return (
     <>
       {error && (
-        <div className="mb-3 rounded-lg bg-destructive/10 px-3 py-2.5 text-xs leading-relaxed text-destructive">
+        <div role="status" className="mb-3 rounded-lg bg-destructive/10 px-3 py-2.5 text-xs leading-relaxed text-destructive">
           {error}
         </div>
       )}

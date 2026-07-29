@@ -8,7 +8,9 @@ function traduzErro(msg) {
   if (/Email not confirmed/i.test(msg)) return 'Confirme seu e-mail antes de entrar (verifique sua caixa de entrada).'
   if (/User already registered/i.test(msg)) return 'Já existe uma conta com esse e-mail — tente entrar.'
   if (/Password should be at least/i.test(msg)) return 'A senha precisa ter pelo menos 8 caracteres.'
-  return msg
+  if (/for security purposes.*only request this after/i.test(msg)) return 'Muitas tentativas seguidas — aguarde um momento e tente de novo.'
+  if (/Failed to fetch|NetworkError|network request failed/i.test(msg)) return 'Não foi possível conectar — verifique sua internet e tente de novo.'
+  return 'Não foi possível completar a ação — tente de novo.'
 }
 
 export function AuthProvider({ children }) {
