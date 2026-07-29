@@ -35,7 +35,7 @@ const COST_PARTS_META = [
 
 export default function Calculadora() {
   const { data: materials, update: updateMaterial } = useCollection('materials')
-  const { data: orders, add: addOrder } = useCollection('orders')
+  const { add: addOrder } = useCollection('orders')
   const { add: addProduct } = useCollection('products')
   const { settings, save: saveSettings } = useSettings()
 

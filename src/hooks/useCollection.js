@@ -19,7 +19,7 @@ export function useCollection(key) {
     if (!error) setData((rows || []).map(r => rowToObj(r, table.fields)))
     else console.error('Erro ao carregar', key, error)
     setLoading(false)
-  }, [user, table, orderCol])
+  }, [user, table, orderCol, key])
 
   useEffect(() => { reload() }, [reload])
 

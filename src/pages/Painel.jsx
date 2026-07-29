@@ -38,6 +38,12 @@ export default function Painel() {
     const lowStock = materials.filter(m => (m.estoque || 0) > 0 && (m.estoque || 0) < 100).length
     const overdue = orders.filter(o => pedidoRowFlag(o) === 'atrasado').length
     return { caixaMes, lucroMedio, pendentes, aReceber, emAberto, emProducao, orcamentosAbertos, zeroed, lowStock, overdue }
+    // `now` is deliberately left out: it's a `new Date()` created fresh every render, so adding
+    // it here would make this recompute on every render (defeating the memoization) instead of
+    // only when the underlying collections change. `now` is only used to derive the current
+    // year-month (`ym`) for filtering this month's sales — safe to read from the render-time
+    // value even though it's not tracked as a dependency.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [materials, products, orders, sales])
 
   const alerts = []
