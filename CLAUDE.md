@@ -196,6 +196,24 @@ em `useCollection`/`useSettings`/formulários — aquilo cobre falhas *esperadas
 assíncronas (mostradas como mensagem inline); o `ErrorBoundary` é a rede de segurança pra erros de
 render *inesperados*, que aquele padrão não cobre.
 
+Em 2026-07-28, o banner de erro de `DataTable` (mesmo padrão `bg-destructive/10 text-destructive`)
+passou a cobrir falhas de *salvamento* (edição inline/exclusão). Em 2026-07-29, o mesmo tratamento
+foi estendido pro *carregamento inicial*: `reload()` em `useCollection`/`useSettings` agora expõe
+um `error` (além de `data`/`settings`, `loading`) que fica `null` num reload bem-sucedido e recebe o
+erro do Supabase quando a chamada falha. Antes, uma falha no `reload()` de montagem (ex: usuário
+offline, instabilidade do Supabase) só dava `console.error` — `data`/`settings` ficavam no valor
+inicial vazio/padrão e `loading` virava `false` do mesmo jeito, deixando a tela idêntica a uma conta
+genuinamente vazia (`DataTable`'s `emptyMessage`, ex: "Nenhum material cadastrado ainda."), sem
+nenhum jeito de o usuário perceber que os dados não sumiram — só não carregaram. As 7 páginas
+(`Painel`/`Calculadora`/`Materiais`/`Produtos`/`Pedidos`/`Vendas`/`Relatorio`) agora conferem esse
+`error` (combinando com `||` quando a página usa mais de uma coleção/settings) e mostram um banner
+`aria-live="polite"` no topo do conteúdo ("Não consegui carregar seus dados — verifique sua conexão
+e recarregue a página.") quando ele existe. Importante: um `reload()` que falha **não** limpa
+`data`/`settings` pro valor vazio/padrão — mantém o que já estava carregado (útil se a falha
+acontecer numa recarga manual no meio da sessão, depois que os dados reais já tinham chegado uma
+vez); só a tela de montagem inicial (sem nada carregado ainda) mostra o banner sem nenhuma linha na
+tabela por baixo.
+
 **Importante**: como é tudo client-side com a chave `anon public`, a segurança real continua vindo
 das políticas de RLS, não do sigilo da chave — mas agora a chave não é mais commitada num
 `config.js`: vem de variável de ambiente do Vite em build time (ver "Deploy"). A chave

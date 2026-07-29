@@ -12,6 +12,7 @@ export function useSettings() {
   const { user } = useAuth()
   const [settings, setSettings] = useState(DEFAULTS)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   // Mirrors `settings` synchronously so `save()` always merges against the latest known
   // value instead of the `settings` snapshot closed over when this `save` reference was
   // created. Without this, two saves fired close together (e.g. tabbing between two
@@ -22,25 +23,34 @@ export function useSettings() {
   const reload = useCallback(async () => {
     if (!user) return
     setLoading(true)
-    const { data, error } = await supabase.from('settings').select('*').eq('user_id', user.id).maybeSingle()
-    if (!error && data) {
-      const loaded = {
-        metaMensal: Number(data.meta_mensal),
-        orcamentoNumero: data.orcamento_numero || 0,
-        empresaNome: data.empresa_nome || '',
-        logoDataUrl: data.logo_data_url || '',
-        printerCost: Number(data.printer_cost ?? DEFAULTS.printerCost),
-        printerLife: Number(data.printer_life ?? DEFAULTS.printerLife),
-        nozzleCost: Number(data.nozzle_cost ?? DEFAULTS.nozzleCost),
-        nozzleLife: Number(data.nozzle_life ?? DEFAULTS.nozzleLife),
-        energyRate: Number(data.energy_rate ?? DEFAULTS.energyRate),
-        laborRate: Number(data.labor_rate ?? DEFAULTS.laborRate),
-        laborHours: Number(data.labor_hours ?? DEFAULTS.laborHours),
+    const { data, error: fetchError } = await supabase.from('settings').select('*').eq('user_id', user.id).maybeSingle()
+    if (!fetchError) {
+      // `data` can legitimately be null here (brand-new account, no `settings` row yet) —
+      // that's not an error, just keep the defaults. Only a real `fetchError` (offline,
+      // Supabase hiccup) should surface — and even then, `settings` stays at whatever it
+      // last successfully held instead of resetting to DEFAULTS, so a stale-but-real value
+      // isn't replaced by a placeholder that looks just as legitimate.
+      if (data) {
+        const loaded = {
+          metaMensal: Number(data.meta_mensal),
+          orcamentoNumero: data.orcamento_numero || 0,
+          empresaNome: data.empresa_nome || '',
+          logoDataUrl: data.logo_data_url || '',
+          printerCost: Number(data.printer_cost ?? DEFAULTS.printerCost),
+          printerLife: Number(data.printer_life ?? DEFAULTS.printerLife),
+          nozzleCost: Number(data.nozzle_cost ?? DEFAULTS.nozzleCost),
+          nozzleLife: Number(data.nozzle_life ?? DEFAULTS.nozzleLife),
+          energyRate: Number(data.energy_rate ?? DEFAULTS.energyRate),
+          laborRate: Number(data.labor_rate ?? DEFAULTS.laborRate),
+          laborHours: Number(data.labor_hours ?? DEFAULTS.laborHours),
+        }
+        settingsRef.current = loaded
+        setSettings(loaded)
       }
-      settingsRef.current = loaded
-      setSettings(loaded)
-    } else if (error) {
-      console.error('Erro ao carregar settings', error)
+      setError(null)
+    } else {
+      console.error('Erro ao carregar settings', fetchError)
+      setError(fetchError)
     }
     setLoading(false)
   }, [user])
@@ -72,5 +82,5 @@ export function useSettings() {
     return { error }
   }
 
-  return { settings, loading, save }
+  return { settings, loading, error, save }
 }

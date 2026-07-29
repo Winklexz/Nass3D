@@ -21,9 +21,10 @@ const VENDAS_CSV_COLUMNS = [
 ]
 
 export default function Vendas() {
-  const { data: sales, add, update, remove } = useCollection('sales')
-  const { data: orders, update: updateOrder } = useCollection('orders')
-  const { data: products } = useCollection('products')
+  const { data: sales, error: salesError, add, update, remove } = useCollection('sales')
+  const { data: orders, error: ordersError, update: updateOrder } = useCollection('orders')
+  const { data: products, error: productsError } = useCollection('products')
+  const loadError = salesError || ordersError || productsError
 
   const [pedidoId, setPedidoId] = useState('')
   const [data, setData] = useState('')
@@ -89,6 +90,12 @@ export default function Vendas() {
       <p className="mb-5 max-w-xl text-sm text-muted-foreground">
         Registre suas vendas — produto, dados do comprador e valor.
       </p>
+
+      {loadError && (
+        <div aria-live="polite" className="mb-5 rounded-lg bg-destructive/10 px-3 py-2.5 text-xs leading-relaxed text-destructive">
+          Não consegui carregar seus dados — verifique sua conexão e recarregue a página.
+        </div>
+      )}
 
       <Card className="glass-panel mb-1 p-5">
         <CardContent className="grid grid-cols-1 gap-3 p-0 md:grid-cols-3 md:items-end lg:grid-cols-6">
