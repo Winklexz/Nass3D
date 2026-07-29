@@ -352,9 +352,17 @@ sem sessão precisa, não faz sentido adiar). O `<Outlet />` em
 `<Suspense fallback={...}>` **dentro** do `motion.div` da transição de rota (não por fora) — assim
 a sidebar não pisca durante o carregamento do chunk, e o `AnimatePresence mode="wait"` continua
 funcionando normalmente (a página nova só começa a animar depois que o chunk carrega e o Suspense
-resolve). Isso derrubou o bundle principal de ~715KB pra ~578KB (gzip: 215KB → 175KB); ainda
-aparece o aviso de chunk >500KB (React + Radix + Supabase + Framer Motion + Login, tudo que
-realmente precisa estar disponível antes do login) — dividir isso mais teria retorno pequeno pelo
+resolve). Isso derrubou o bundle principal de ~715KB pra ~578KB (gzip: 215KB → 175KB). Em
+2026-07-29, `AppLayout` (sidebar + gaveta mobile, que importa o `Sheet` do shadcn/ui) também virou
+`React.lazy()` — antes ficava no chunk principal mesmo sendo usado só depois do login, porque era
+importado estático no topo de `App.jsx`; agora quem só vê a tela de login também não baixa esse
+código. Precisou de outro `<Suspense>` envolvendo `<AppLayout />` na própria definição da rota (não
+o mesmo `Suspense` que já envolve o `<Outlet />` dentro do `AppLayout` — são dois níveis, um pro
+carregamento do layout, outro pro carregamento de cada página dentro dele). Isso levou o bundle
+principal pra ~530KB (gzip 159KB). Ainda aparece o aviso de chunk >500KB (React + Radix (Dialog,
+usado por `Login.jsx`? não — o que sobra aqui é Button/Card/Input/Label, que são de fato os únicos
+primitivos que a tela de login usa) + Supabase + Framer Motion + Login) — dividir isso mais teria
+retorno pequeno pelo
 esforço, não é considerado prioridade agora.
 
 ## Git

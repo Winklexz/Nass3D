@@ -1,13 +1,14 @@
-import { lazy } from 'react'
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from '@/context/AuthContext'
 import Login from '@/pages/Login'
-import AppLayout from '@/components/layout/AppLayout'
 
 // Rotas autenticadas carregadas sob demanda: quem só vê a tela de login
 // (sessão expirada, primeiro acesso) não baixa o código das 7 páginas do
-// app inteiro de cara — cada uma vira um chunk separado, buscado só na
-// primeira navegação até ela.
+// app inteiro, nem o AppLayout (sidebar/gaveta mobile, que puxa o Sheet do
+// Radix) de cara — cada uma vira um chunk separado, buscado só na primeira
+// navegação até ela.
+const AppLayout = lazy(() => import('@/components/layout/AppLayout'))
 const Painel = lazy(() => import('@/pages/Painel'))
 const Calculadora = lazy(() => import('@/pages/Calculadora'))
 const Materiais = lazy(() => import('@/pages/Materiais'))
@@ -26,7 +27,14 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
-      <Route path="/*" element={user ? <AppLayout /> : <Navigate to="/login" replace />}>
+      <Route
+        path="/*"
+        element={user ? (
+          <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-muted-foreground">Carregando...</div>}>
+            <AppLayout />
+          </Suspense>
+        ) : <Navigate to="/login" replace />}
+      >
         <Route index element={<Painel />} />
         <Route path="calculadora" element={<Calculadora />} />
         <Route path="materiais" element={<Materiais />} />
