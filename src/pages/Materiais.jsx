@@ -127,7 +127,7 @@ export default function Materiais() {
           Nome: <span className="font-mono font-semibold text-primary">{buildFilamentName(corTexto, complemento)}</span>
         </p>
         {addStatus && (
-          <div className={`mt-2.5 rounded-lg px-3 py-2.5 text-xs leading-relaxed ${addStatus.type === 'ok' ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
+          <div role="status" className={`mt-2.5 rounded-lg px-3 py-2.5 text-xs leading-relaxed ${addStatus.type === 'ok' ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
             {addStatus.text}
           </div>
         )}
@@ -264,7 +264,7 @@ function EditMaterialDialog({ material, onClose, onSave }) {
           </div>
         </div>
         {saveStatus?.type === 'err' && (
-          <p className="text-xs text-destructive">{saveStatus.text}</p>
+          <p role="status" className="text-xs text-destructive">{saveStatus.text}</p>
         )}
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
