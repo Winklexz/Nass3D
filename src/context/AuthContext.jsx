@@ -35,23 +35,13 @@ export function AuthProvider({ children }) {
     return { error: null }
   }
 
-  async function signup(email, password) {
-    const { data, error } = await supabase.auth.signUp({ email, password })
-    if (error) return { error: traduzErro(error.message), needsConfirmation: false }
-    if (data.session) {
-      setUser(data.user)
-      return { error: null, needsConfirmation: false }
-    }
-    return { error: null, needsConfirmation: true }
-  }
-
   async function logout() {
     await supabase.auth.signOut()
     setUser(null)
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   )

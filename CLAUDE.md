@@ -128,13 +128,26 @@ autocomplete de path alias, não faz checagem de tipos).
 `src/context/AuthContext.jsx` concentra tudo (antes era `auth.js`):
 - Ao montar, `getSession()` decide se já existe sessão (pula pro app sem pedir login de novo) e
   `onAuthStateChange` mantém `user` sincronizado
-- `login(email, senha)` → `signInWithPassword`; `signup(email, senha)` → `signUp` (se o projeto
-  exigir confirmação de e-mail, `needsConfirmation: true` é devolvido e o usuário só ganha sessão
-  depois de clicar no link recebido); `logout()` → `signOut()`
+- `login(email, senha)` → `signInWithPassword`; `logout()` → `signOut()`
 - `src/pages/Login.jsx` é a UI (componentes shadcn) que chama essas funções; mensagens de
   erro/sucesso em português, mesmas regras de antes
 - `App.jsx` faz o roteamento condicional: sem `user`, qualquer rota fora de `/login` redireciona
   pra lá; com `user`, `/login` redireciona pra `/`
+
+**Cadastro é só por convite (desde 2026-07-29)**: o botão "Criar conta" e o `signup()` em
+`AuthContext.jsx` (que chamava `supabase.auth.signUp`) foram removidos — decisão do dono do
+produto, não bug. `Login.jsx` hoje só tem e-mail/senha/"Entrar"; quem não tem conta vê "Peça um
+convite para quem administra o Nass3D". **Importante**: essa remoção só tira o botão da interface —
+o endpoint `supabase.auth.signUp` continua existindo e aceitando cadastro se alguém chamar direto
+pela API/console (a chave `anon public` é pública por natureza, então a UI nunca foi a fronteira de
+segurança real). Pra bloquear cadastro de verdade, é preciso desativar "Allow new users to sign up"
+nas configurações de Authentication do projeto no painel do Supabase — isso não está em nenhum
+arquivo deste repo, é config de infraestrutura fora do código, e é responsabilidade de quem
+administra o projeto Supabase (não dá pra automatizar via código-fonte). Se o `signup()` for
+readicionado no futuro (ex: fluxo de convite com token), a lógica de tradução de erro em
+`traduzErro()` (`AuthContext.jsx`) já cobre "User already registered"/"Password should be at
+least" mesmo sem estarem em uso agora — não removidas de propósito, por serem baratas de manter e
+reaproveitáveis.
 
 ## Persistência (Supabase Postgres + RLS)
 
