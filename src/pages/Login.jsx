@@ -14,7 +14,8 @@ export default function Login() {
   const [msgType, setMsgType] = useState('')
   const [loading, setLoading] = useState(false)
 
-  async function handleLogin() {
+  async function handleLogin(e) {
+    e?.preventDefault()
     if (!email || !password) { setMsg('Preencha e-mail e senha.'); setMsgType('err'); return }
     setLoading(true); setMsg('Entrando...'); setMsgType('')
     const { error } = await login(email, password)
@@ -43,21 +44,21 @@ export default function Login() {
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
         <Card className="glass-panel w-full max-w-sm p-2">
           <CardContent className="pt-6">
+            <h1 className="sr-only">Nass3D — Gestão de Impressão 3D</h1>
             <div className="flex items-center justify-center mb-6">
-              <img src="/logo-nass3d.png" alt="Nass3D" className="h-20 w-auto" />
+              <img src="/logo-nass3d.webp" alt="Nass3D" className="h-20 w-auto" />
             </div>
-            <div className="space-y-4">
+            <form className="space-y-4" onSubmit={handleLogin}>
               <div className="space-y-1.5">
                 <Label htmlFor="email">E-mail</Label>
                 <Input id="email" type="email" autoComplete="email" value={email}
                   onChange={e => setEmail(e.target.value)} placeholder="voce@email.com"
-                  onKeyDown={e => e.key === 'Enter' && document.getElementById('password')?.focus()} />
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('password')?.focus() } }} />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="password">Senha</Label>
                 <Input id="password" type="password" autoComplete="current-password" value={password}
-                  onChange={e => setPassword(e.target.value)} placeholder="••••••••"
-                  onKeyDown={e => e.key === 'Enter' && handleLogin()} />
+                  onChange={e => setPassword(e.target.value)} placeholder="••••••••" />
               </div>
               {msg && (
                 <p className={
@@ -66,13 +67,13 @@ export default function Login() {
                 }>{msg}</p>
               )}
               <div className="flex gap-2.5 pt-1">
-                <Button className="flex-1" onClick={handleLogin} disabled={loading}>Entrar</Button>
-                <Button className="flex-1" variant="outline" onClick={handleSignup} disabled={loading}>Criar conta</Button>
+                <Button type="submit" className="flex-1" disabled={loading}>Entrar</Button>
+                <Button type="button" className="flex-1" variant="outline" onClick={handleSignup} disabled={loading}>Criar conta</Button>
               </div>
               <p className="text-xs text-muted-foreground text-center pt-2">
                 Seus dados ficam vinculados a este login e sincronizados entre dispositivos.
               </p>
-            </div>
+            </form>
           </CardContent>
         </Card>
       </motion.div>

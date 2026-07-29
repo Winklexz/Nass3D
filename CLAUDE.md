@@ -89,7 +89,8 @@ Security).
 - [vite.config.js](vite.config.js) — plugin do React + alias `@` → `src/` + `VitePWA` (manifest e
   service worker, ver seção "PWA" abaixo)
 - [pwa-assets.config.js](pwa-assets.config.js) — config do `@vite-pwa/assets-generator`, usado uma
-  vez (`npx pwa-assets-generator`) pra gerar os ícones do PWA a partir de `public/logo-nass3d.png`
+  vez (`npx pwa-assets-generator`) pra gerar os ícones do PWA a partir de
+  `src/assets/logo-source.png` (fonte em alta resolução, não a versão leve `.webp` servida pela UI)
   — só roda de novo se a logo mudar, não faz parte do build normal
 - `.env.local` (gitignored) / [.env.example](.env.example) — `VITE_SUPABASE_URL` /
   `VITE_SUPABASE_ANON_KEY` pro ambiente local (ver seção Deploy pra produção)
@@ -199,13 +200,19 @@ redesign; resumo do que foi decidido e por quê, pra quem for mexer na UI depois
   itens da sidebar), `font-sans`/padrão (Inter, corpo de texto) e `font-mono` (JetBrains Mono,
   números e dados tabulares — e-mail do usuário na sidebar, valores monetários). Carregadas via
   Google Fonts (ver `index.html`).
-- **Logo**: `public/logo-nass3d.png`, arquivo PNG real da empresa. Tela de login mostra a logo
+- **Logo**: fonte de verdade em alta resolução (1254×1254, PNG real da empresa) fica em
+  `src/assets/logo-source.png` — não vai pro bundle nem é servida publicamente, só existe pra
+  regenerar ícones do PWA (ver seção "PWA" abaixo). O que a UI de fato carrega é
+  `public/logo-nass3d.webp` (512×512, qualidade 90, ~13KB — reduzido de ~1MB em 2026-07-28, o PNG
+  original era pesado demais pra ser servido numa tela de login). Tela de login mostra a logo
   inteira; a sidebar mostra só o hexágono, recortado via `transform: scale()` com
   `transform-origin` deslocado (não `object-position`, porque o container e a imagem têm a mesma
   proporção 1:1 — `object-fit: cover` sozinho não cortaria nada). Os valores de escala/origem foram
-  calibrados a olho contra o arquivo real; ver o comentário longo em
+  calibrados a olho contra o arquivo original; ver o comentário longo em
   [src/components/layout/Sidebar.jsx](src/components/layout/Sidebar.jsx) antes de trocar o arquivo
-  de logo, porque provavelmente vai precisar recalibrar.
+  de logo, porque provavelmente vai precisar recalibrar. Se a logo mudar, regenere tanto
+  `src/assets/logo-source.png` (alta resolução, pra ícones) quanto `public/logo-nass3d.webp`
+  (versão leve pra UI).
 - **Layout/navegação**: sidebar fixa à esquerda (~240px, `md:w-60`) com logo, os 7 itens de
   navegação (ícone `lucide-react` + label) e e-mail/botão Sair no rodapé
   (`src/components/layout/Sidebar.jsx`). Abaixo de 768px vira uma gaveta (`Sheet` do shadcn/ui)
@@ -239,7 +246,7 @@ mudança de tela/funcionalidade existente.
   fontes) — **nunca** chamadas ao Supabase, que sempre vêm da rede. Não há suporte offline pros
   dados (materiais, pedidos, vendas continuam exigindo internet); o que fica em cache é só o
   "esqueleto" visual, pra abrir mais rápido / não ficar em branco com sinal ruim.
-- **Ícones**: gerados uma vez a partir de `public/logo-nass3d.png` via `npx pwa-assets-generator`
+- **Ícones**: gerados uma vez a partir de `src/assets/logo-source.png` via `npx pwa-assets-generator`
   (usa o `pwa-assets.config.js` na raiz) — produz `pwa-64x64.png`, `pwa-192x192.png`,
   `pwa-512x512.png`, `maskable-icon-512x512.png` (com margem de segurança pro Android recortar em
   formatos variados), `apple-touch-icon-180x180.png` e `favicon.ico`, todos commitados em

@@ -32,7 +32,7 @@ export default function Sidebar({ onNavigate }) {
               asset (pixel-sampled hexagon bounds) to frame just the hexagon
               with a small margin, well clear of the wordmark. Re-tune both
               together if the source logo file ever changes. */}
-          <img src="/logo-nass3d.png" alt="Nass3D" className="h-full w-full origin-[50%_28%] scale-[2.15] object-cover" />
+          <img src="/logo-nass3d.webp" alt="Nass3D" className="h-full w-full origin-[50%_28%] scale-[2.15] object-cover" />
         </div>
         <div>
           <div className="font-display font-extrabold text-sm tracking-wide">NASS3D</div>
