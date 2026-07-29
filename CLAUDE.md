@@ -162,9 +162,16 @@ handlers de UI, sem reconstruir nem regravar o array inteiro a cada edição. Os
 "Adicionar" das 4 páginas conferem o `{ error }` devolvido por `add()` antes de limpar o campo,
 mostrando uma mensagem de erro em vez de fingir sucesso (padrão igualado entre as páginas em
 2026-07-27 — antes só Materiais fazia essa checagem; Produtos/Pedidos/Vendas limpavam o formulário
-mesmo quando o salvamento falhava). A edição inline por célula (`textCell`/`numberCell`/etc. em
-`DataTable.jsx`) e o botão de excluir **ainda não** checam erro — ficou de fora dessa rodada porque
-exigiria decidir um mecanismo de aviso (toast/banner) compartilhado pela tabela inteira. `useSettings.js`
+mesmo quando o salvamento falhava). Em 2026-07-28, a edição inline por célula
+(`textCell`/`numberCell`/`dateCell`/`selectCell` em `DataTable.jsx`) e o botão de excluir também
+passaram a checar erro: `DataTable` ganhou um banner de erro local (mesmo estilo
+`bg-destructive/10 text-destructive` usado nos formulários) mostrado acima da tabela quando
+`onUpdate`/`onRemove` falham. Como as células de edição inline são inputs não controlados
+(`defaultValue`), uma falha por si só não desfazia visualmente o que o usuário tinha digitado — por
+isso `DataTable` também mantém um contador de versão por célula (`cellVersions`, chave
+`${row.id}:${campo}`), incrementado só quando aquela célula falha, e usado como parte da `key` do
+`Input`/`Select` pra forçar o React a remontá-lo com o `defaultValue` real (o valor que de fato está
+salvo) em vez de deixar o texto não-salvo aparentando sucesso. `useSettings.js`
 continua fazendo `upsert` com `onConflict: 'user_id'` (não muda, porque `settings` sempre foi uma
 linha única, nunca teve o problema de diff de array). A conversão camelCase (app) ↔ snake_case
 (banco) que antes vivia num objeto `TABLES` dentro de `script.js` agora está em
