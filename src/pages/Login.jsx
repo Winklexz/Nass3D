@@ -26,7 +26,7 @@ export default function Login() {
 
   async function handleSignup() {
     if (!email || !password) { setMsg('Preencha e-mail e senha.'); setMsgType('err'); return }
-    if (password.length < 6) { setMsg('A senha precisa ter pelo menos 6 caracteres.'); setMsgType('err'); return }
+    if (password.length < 8) { setMsg('A senha precisa ter pelo menos 8 caracteres.'); setMsgType('err'); return }
     setLoading(true); setMsg('Criando conta...'); setMsgType('')
     const { error, needsConfirmation } = await signup(email, password)
     setLoading(false)

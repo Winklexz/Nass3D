@@ -41,7 +41,11 @@ Security).
   `<table>`, pra manter os botões de ação sempre alcançáveis no celular sem scroll horizontal —
   adicionado em 2026-07-26 depois de um bug relatado onde o botão de excluir ficava fora da área
   visível/tocável em telas pequenas; também ganhou uma prop opcional `onEdit(row)` que adiciona um
-  ícone de editar além do de excluir, usado hoje só por Materiais)
+  ícone de editar além do de excluir, usado hoje só por Materiais; em 2026-07-28 o clique no ícone
+  de excluir passou a abrir um `Dialog` de confirmação em vez de excluir na hora — usa o mesmo
+  `Dialog`/`DialogContent`/etc. de `src/components/ui/dialog.jsx` que as páginas já usavam pros
+  modais de edição, não um componente novo de "alert dialog"; `ErrorBoundary.jsx` também é deste
+  diretório — ver seção "Tratamento de erros" abaixo)
 - [src/components/ui/](src/components/ui) — primitivos gerados pelo CLI do shadcn/ui (`button`,
   `card`, `input`, `label`, `select`, `sheet`, `table`, `textarea`, `dialog`). Não têm lógica de negócio —
   regenerar/adicionar via `npx shadcn add <componente>` em vez de escrever à mão
@@ -171,11 +175,26 @@ passaram a checar erro: `DataTable` ganhou um banner de erro local (mesmo estilo
 isso `DataTable` também mantém um contador de versão por célula (`cellVersions`, chave
 `${row.id}:${campo}`), incrementado só quando aquela célula falha, e usado como parte da `key` do
 `Input`/`Select` pra forçar o React a remontá-lo com o `defaultValue` real (o valor que de fato está
-salvo) em vez de deixar o texto não-salvo aparentando sucesso. `useSettings.js`
-continua fazendo `upsert` com `onConflict: 'user_id'` (não muda, porque `settings` sempre foi uma
-linha única, nunca teve o problema de diff de array). A conversão camelCase (app) ↔ snake_case
-(banco) que antes vivia num objeto `TABLES` dentro de `script.js` agora está em
+salvo) em vez de deixar o texto não-salvo aparentando sucesso. Também em 2026-07-28, o ícone de
+excluir passou a abrir um `Dialog` de confirmação ("Excluir item? Essa ação não pode ser desfeita.")
+em vez de chamar `remove()` direto no clique — mitiga exclusão acidental por clique errado.
+`useSettings.js` continua fazendo `upsert` com `onConflict: 'user_id'` (não muda, porque `settings`
+sempre foi uma linha única, nunca teve o problema de diff de array). A conversão camelCase (app) ↔
+snake_case (banco) que antes vivia num objeto `TABLES` dentro de `script.js` agora está em
 [src/lib/tables.js](src/lib/tables.js), usada por `useCollection`.
+
+### Tratamento de erros inesperados
+
+[src/components/shared/ErrorBoundary.jsx](src/components/shared/ErrorBoundary.jsx) (adicionado em
+2026-07-28) envolve `<App />` inteiro em `src/main.jsx` — um `class Component` com
+`getDerivedStateFromError`/`componentDidCatch` (React ainda exige classe pra isso, não tem
+equivalente em hook) que mostra um cartão "Algo deu errado" com botão "Recarregar página" em vez de
+deixar a tela em branco quando algo lança um erro não tratado durante a renderização. Sem isso, um
+erro em qualquer componente (ex: formato de dado inesperado vindo do Supabase) derrubava a árvore
+do React inteira sem nenhuma mensagem. Não confundir com o tratamento de erro de rede já existente
+em `useCollection`/`useSettings`/formulários — aquilo cobre falhas *esperadas* de chamadas
+assíncronas (mostradas como mensagem inline); o `ErrorBoundary` é a rede de segurança pra erros de
+render *inesperados*, que aquele padrão não cobre.
 
 **Importante**: como é tudo client-side com a chave `anon public`, a segurança real continua vindo
 das políticas de RLS, não do sigilo da chave — mas agora a chave não é mais commitada num

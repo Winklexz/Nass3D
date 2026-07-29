@@ -7,10 +7,14 @@ import { Button } from '@/components/ui/button'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 
 export default function DataTable({ columns, rows, onUpdate, onRemove, onEdit, emptyMessage, rowClassName }) {
   const [error, setError] = useState(null)
+  const [confirmRemove, setConfirmRemove] = useState(null)
   // Bumped per row+campo quando uma edição inline falha, só pra trocar a `key` do Input/Select
   // daquela célula e forçar o React a remontar com o defaultValue real (desfazendo visualmente
   // o valor que o usuário digitou e que nunca foi salvo — sem isso o input não controlado
@@ -37,6 +41,7 @@ export default function DataTable({ columns, rows, onUpdate, onRemove, onEdit, e
   async function handleRemove(id) {
     const { error: err } = await onRemove(id)
     setError(err ? 'Não consegui excluir — verifique sua conexão e tente de novo.' : null)
+    setConfirmRemove(null)
   }
 
   if (rows.length === 0) {
@@ -84,7 +89,7 @@ export default function DataTable({ columns, rows, onUpdate, onRemove, onEdit, e
                     <div className="flex justify-end gap-1">
                       {onEdit && (
                         <Button
-                          variant="ghost" size="icon"
+                          variant="ghost" size="icon" aria-label="Editar"
                           className="h-7 w-7 text-muted-foreground hover:text-primary"
                           onClick={() => onEdit(row)}
                         >
@@ -92,9 +97,9 @@ export default function DataTable({ columns, rows, onUpdate, onRemove, onEdit, e
                         </Button>
                       )}
                       <Button
-                        variant="ghost" size="icon"
+                        variant="ghost" size="icon" aria-label="Excluir"
                         className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                        onClick={() => handleRemove(row.id)}
+                        onClick={() => setConfirmRemove(row)}
                       >
                         <Trash2 size={14} />
                       </Button>
@@ -133,7 +138,7 @@ export default function DataTable({ columns, rows, onUpdate, onRemove, onEdit, e
               <div className="mt-2.5 flex justify-end gap-1 border-t border-border/60 pt-2.5">
                 {onEdit && (
                   <Button
-                    variant="ghost" size="icon"
+                    variant="ghost" size="icon" aria-label="Editar"
                     className="h-8 w-8 text-muted-foreground hover:text-primary"
                     onClick={() => onEdit(row)}
                   >
@@ -141,9 +146,9 @@ export default function DataTable({ columns, rows, onUpdate, onRemove, onEdit, e
                   </Button>
                 )}
                 <Button
-                  variant="ghost" size="icon"
+                  variant="ghost" size="icon" aria-label="Excluir"
                   className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                  onClick={() => handleRemove(row.id)}
+                  onClick={() => setConfirmRemove(row)}
                 >
                   <Trash2 size={15} />
                 </Button>
@@ -152,6 +157,19 @@ export default function DataTable({ columns, rows, onUpdate, onRemove, onEdit, e
           ))}
         </AnimatePresence>
       </div>
+
+      <Dialog open={!!confirmRemove} onOpenChange={(open) => { if (!open) setConfirmRemove(null) }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Excluir item?</DialogTitle>
+            <DialogDescription>Essa ação não pode ser desfeita.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmRemove(null)}>Cancelar</Button>
+            <Button variant="destructive" onClick={() => handleRemove(confirmRemove.id)}>Excluir</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

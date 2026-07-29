@@ -19,7 +19,7 @@ export default function AppLayout() {
         <span className="font-display text-sm font-bold">NASS3D</span>
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger asChild>
-            <button className="rounded-lg border border-border p-2 text-muted-foreground">
+            <button aria-label="Abrir menu" className="rounded-lg border border-border p-2 text-muted-foreground">
               <Menu size={18} />
             </button>
           </SheetTrigger>
