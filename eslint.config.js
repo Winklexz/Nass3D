@@ -6,8 +6,11 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
   // `dist/` is the Vite build output (generated); `node_modules/` is ignored automatically by
-  // flat config, but listing it here too doesn't hurt and documents the intent.
-  globalIgnores(['dist', 'node_modules']),
+  // flat config, but listing it here too doesn't hurt and documents the intent. `.claude/worktrees`
+  // holds isolated git checkouts used by background agents — without excluding it, `src/**/*.{js,jsx}`
+  // matches inside those checkouts too, double-linting (and, mid-run, sometimes linting) another
+  // worktree's in-progress code as if it were this one's.
+  globalIgnores(['dist', 'node_modules', '.claude']),
   {
     // App code: browser-only (React SPA, no SSR/Node APIs at runtime).
     files: ['src/**/*.{js,jsx}'],
